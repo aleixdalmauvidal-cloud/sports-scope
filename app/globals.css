@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  @apply min-h-screen bg-surface text-zinc-100 antialiased;
+  background-image:
+    radial-gradient(ellipse 100% 60% at 50% -30%, rgba(46, 228, 168, 0.06), transparent),
+    radial-gradient(ellipse 50% 40% at 100% 0%, rgba(100, 120, 200, 0.05), transparent),
+    linear-gradient(180deg, #0c0e14 0%, #090a0e 45%, #090a0e 100%);
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #2a3140 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-thumb {
+  @apply rounded-full bg-surface-border;
+}
