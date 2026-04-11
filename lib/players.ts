@@ -17,6 +17,7 @@ const cmvSelectWithJoins = `
     name,
     position,
     nationality,
+    photo_url,
     clubs!inner (
       name,
       league
@@ -31,11 +32,13 @@ function mapCmvJoinToPlayer(row: CmvScoreWithAthleteClub): PlayerRow {
     id: a.id,
     name: a.name,
     club: clubName,
+    league: a.clubs?.league ?? null,
     position: a.position,
     sports_score: Number(row.sports_score),
     social_score: Number(row.social_score),
     cmv_total: Number(row.cmv_total),
     nationality: a.nationality,
+    photo_url: a.photo_url ?? null,
   };
 }
 
@@ -93,7 +96,7 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
   const [athRes, cmvRes, sportRes, socialRes] = await Promise.all([
     supabase
       .from("athletes")
-      .select("id, name, position, nationality, age, photo_url, clubs ( name )")
+      .select("id, name, position, nationality, age, photo_url, clubs ( name, league )")
       .eq("id", id)
       .maybeSingle(),
     supabase
@@ -141,17 +144,21 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
     nationality: string | null;
     age: number | null;
     photo_url: string | null;
-    clubs: { name: string } | null;
+    clubs: { name: string; league: string | null } | null;
   };
 
   const cmv = cmvRes.data as
     | { sports_score: number; social_score: number; cmv_total: number }
     | null;
 
+  const cmv_rank = await getAthleteCmvRank(a.id, 500);
+
   return {
     id: a.id,
     name: a.name,
     club: a.clubs?.name ?? "—",
+    league: a.clubs?.league ?? null,
+    cmv_rank,
     position: a.position,
     nationality: a.nationality,
     age: a.age ?? null,
@@ -196,6 +203,16 @@ export async function getTopPlayersByCmv(limit = 30): Promise<PlayerRow[]> {
   return rows.map(mapCmvJoinToPlayer);
 }
 
+/** Posición en ranking según el orden de `getTopPlayersByCmv` (máx. `limit` jugadores). */
+export async function getAthleteCmvRank(
+  athleteId: string,
+  limit = 500
+): Promise<number | null> {
+  const list = await getTopPlayersByCmv(limit);
+  const i = list.findIndex((p) => p.id === athleteId);
+  return i === -1 ? null : i + 1;
+}
+
 export async function getPlayerById(id: string): Promise<PlayerRow | null> {
   const profile = await getPlayerProfile(id);
   if (!profile) return null;
@@ -203,6 +220,7 @@ export async function getPlayerById(id: string): Promise<PlayerRow | null> {
     id: profile.id,
     name: profile.name,
     club: profile.club,
+    league: profile.league,
     position: profile.position,
     sports_score: profile.sports_score,
     social_score: profile.social_score,

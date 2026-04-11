@@ -3,6 +3,8 @@ export type PlayerRow = {
   id: string;
   name: string;
   club: string;
+  /** Liga del club (ej. La Liga) */
+  league: string | null;
   position: string;
   sports_score: number;
   social_score: number;
@@ -69,6 +71,9 @@ export type PlayerProfile = {
   id: string;
   name: string;
   club: string;
+  league: string | null;
+  /** Posición en ranking CMV global (1 = primero); null si fuera del top consultado */
+  cmv_rank: number | null;
   position: string;
   nationality: string | null;
   age: number | null;
@@ -91,6 +96,7 @@ export type CmvScoreWithAthleteClub = {
     name: string;
     position: string;
     nationality: string | null;
+    photo_url: string | null;
     clubs: Pick<ClubRow, "name" | "league"> | null;
   };
 };

@@ -7,7 +7,7 @@
 }
 
 body {
-  @apply min-h-screen bg-surface text-zinc-100 antialiased;
+  @apply min-h-screen bg-surface text-base text-zinc-200 antialiased;
   background-image:
     radial-gradient(ellipse 100% 60% at 50% -30%, rgba(46, 228, 168, 0.06), transparent),
     radial-gradient(ellipse 50% 40% at 100% 0%, rgba(100, 120, 200, 0.05), transparent),

@@ -28,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="es" className={`${inter.variable} ${jetbrains.variable}`}>
-      <body className="font-sans">
+      <body className="font-sans text-base leading-relaxed text-zinc-200 antialiased">
         <div className="relative flex min-h-screen flex-col">
           <SiteHeader />
           <main className="relative flex-1">
@@ -38,7 +38,7 @@ export default function RootLayout({
             />
             {children}
           </main>
-          <footer className="border-t border-white/[0.06] py-6 text-center text-[11px] leading-relaxed text-zinc-600 sm:py-7">
+          <footer className="border-t border-white/[0.1] py-8 text-center text-base leading-relaxed text-zinc-500 sm:py-10">
             Sports Scope · CMV es una estimación agregada. Datos con fines informativos.
           </footer>
         </div>
