@@ -12,6 +12,8 @@ export interface Player {
   rank: number;
   name: string;
   club: string;
+  /** Club competition (e.g. La Liga); null if unknown */
+  league: string | null;
   nationality: string;
   flag: string;
   position: string;
@@ -334,6 +336,7 @@ export function mapPlayerRowToV0Player(row: PlayerRow, rank: number): Player {
     rank,
     name: row.name,
     club: row.club,
+    league: row.league ?? null,
     nationality: nat,
     flag: nationalityToFlagEmoji(row.nationality),
     position: row.position,

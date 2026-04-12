@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, TrendingUp, TrendingDown } from "lucide-react"
+import { ArrowLeft, ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { CMVHistoryChart } from "@/components/cmv-history-chart"
 import { getPlayerProfile, mapPlayerProfileToV0Player } from "@/lib/players"
@@ -287,13 +287,22 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
       <main className="ml-20 min-h-screen">
         <div className="p-6 lg:p-8">
           {/* Back Link */}
-          <Link 
-            href="/" 
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 group"
-          >
-            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-            <span className="text-sm">Back to Rankings</span>
-          </Link>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+            <Link
+              href="/"
+              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
+            >
+              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+              <span className="text-sm">Back to Rankings</span>
+            </Link>
+            <Link
+              href={`/compare?with=${id}`}
+              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 hover:border-[#7C6FFF]/40 transition-colors"
+            >
+              <ArrowLeftRight className="w-4 h-4 text-[#7C6FFF]" />
+              Compare with another player
+            </Link>
+          </div>
 
           {/* Player Header - 2 Column Layout */}
           <div className="flex flex-col lg:flex-row gap-8 mb-8">

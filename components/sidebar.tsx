@@ -28,7 +28,8 @@ export function Sidebar() {
       {/* Navigation */}
       <nav className="flex-1 flex flex-col items-center gap-2">
         {navItems.map((item) => {
-          const isActive = pathname === item.href || (item.href === "/" && pathname === "/")
+          const isActive =
+            item.href === "/" ? pathname === "/" : pathname === item.href
           const Icon = item.icon
           
           return (

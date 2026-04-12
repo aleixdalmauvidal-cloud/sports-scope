@@ -1,15 +1,19 @@
-import { Sidebar } from "@/components/sidebar"
+import type { Metadata } from "next";
+import { getTopPlayersByCmv, mapPlayerRowsToV0Players } from "@/lib/players";
+import { ComparePageClient } from "@/components/compare-page-client";
 
-export default function ComparePage() {
-  return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
-      <main className="ml-16 min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-foreground mb-2">Compare Players</h1>
-          <p className="text-muted-foreground">Side-by-side player comparison coming soon</p>
-        </div>
-      </main>
-    </div>
-  )
+export const metadata: Metadata = {
+  title: "Compare Players | Sports Scope",
+  description: "Compare CMV profiles side by side for up to four players.",
+};
+
+export default async function ComparePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ with?: string }>;
+}) {
+  const rows = await getTopPlayersByCmv(30);
+  const players = mapPlayerRowsToV0Players(rows);
+  const { with: withId } = await searchParams;
+  return <ComparePageClient initialPlayers={players} preselectId={withId} />;
 }
