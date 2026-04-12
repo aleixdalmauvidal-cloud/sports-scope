@@ -68,7 +68,7 @@ export function HeroCards({ players }: HeroCardsProps) {
         >
           {/* Rank Badge */}
           <div style={{ marginBottom: "16px" }}>
-            <RankBadge rank={player.rank} />
+            <RankBadge rank={index + 1} />
           </div>
 
           {/* Player Name & Club */}

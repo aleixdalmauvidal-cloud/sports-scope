@@ -7,7 +7,6 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 interface PlayerCardsGridProps {
   players: Player[]
-  searchQuery: string
 }
 
 function MiniArcGauges({ player }: { player: Player }) {
@@ -61,7 +60,7 @@ function TrendRow({ change }: { change: number }) {
   )
 }
 
-function PlayerCard({ player }: { player: Player }) {
+function PlayerCard({ player, displayRank }: { player: Player; displayRank: number }) {
   return (
     <Link
       href={`/player/${player.id}`}
@@ -118,12 +117,12 @@ function PlayerCard({ player }: { player: Player }) {
           className="absolute text-[120px] font-bold select-none"
           style={{ color: player.accentColor, opacity: 0.08 }}
         >
-          {player.shirtNumber}
+          {displayRank}
         </span>
         
         {/* Rank Badge */}
         <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-foreground" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
-          #{player.rank}
+          #{displayRank}
         </div>
         
         {/* CMV Badge */}
@@ -187,22 +186,16 @@ function PlayerCard({ player }: { player: Player }) {
   )
 }
 
-export function PlayerCardsGrid({ players, searchQuery }: PlayerCardsGridProps) {
-  const filteredPlayers = players.filter(
-    (player) =>
-      player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.club.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
+export function PlayerCardsGrid({ players }: PlayerCardsGridProps) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-      {filteredPlayers.map((player) => (
-        <PlayerCard key={player.id} player={player} />
+      {players.map((player, index) => (
+        <PlayerCard key={player.id} player={player} displayRank={index + 1} />
       ))}
       
-      {filteredPlayers.length === 0 && (
+      {players.length === 0 && (
         <div className="col-span-full py-16 text-center text-muted-foreground">
-          No players found matching &ldquo;{searchQuery}&rdquo;
+          No players match your filters. Try adjusting search or filters.
         </div>
       )}
     </div>

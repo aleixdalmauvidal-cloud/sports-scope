@@ -6,7 +6,6 @@ import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 interface RankingTableProps {
   players: Player[]
-  searchQuery: string
 }
 
 function MiniSparkline({ data }: { data: number[] }) {
@@ -77,13 +76,7 @@ function WeeklyChange({ change }: { change: number }) {
   )
 }
 
-export function RankingTable({ players, searchQuery }: RankingTableProps) {
-  const filteredPlayers = players.filter(
-    (player) =>
-      player.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      player.club.toLowerCase().includes(searchQuery.toLowerCase())
-  )
-
+export function RankingTable({ players }: RankingTableProps) {
   return (
     <div className="overflow-x-auto">
       <table className="w-full">
@@ -119,7 +112,7 @@ export function RankingTable({ players, searchQuery }: RankingTableProps) {
           </tr>
         </thead>
         <tbody>
-          {filteredPlayers.map((player, index) => (
+          {players.map((player, index) => (
             <tr
               key={player.id}
               className={`border-b border-border transition-all hover:bg-[#7C6FFF]/5 group cursor-pointer relative ${
@@ -129,7 +122,7 @@ export function RankingTable({ players, searchQuery }: RankingTableProps) {
               <td className="py-5 px-4">
                 <Link href={`/player/${player.id}`} className="block">
                   <span className="text-sm font-medium text-muted-foreground">
-                    {player.rank}
+                    {index + 1}
                   </span>
                 </Link>
               </td>
@@ -192,9 +185,9 @@ export function RankingTable({ players, searchQuery }: RankingTableProps) {
         </tbody>
       </table>
 
-      {filteredPlayers.length === 0 && (
+      {players.length === 0 && (
         <div className="py-16 text-center text-muted-foreground">
-          No players found matching &ldquo;{searchQuery}&rdquo;
+          No players match your filters. Try adjusting search or filters.
         </div>
       )}
     </div>
