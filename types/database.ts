@@ -51,11 +51,17 @@ export type SportsMetricsRow = {
   athlete_id: string;
   date: string;
   season?: number | null;
+  /** API-Football player id (sync / future fetches) */
+  api_football_id?: number | null;
   /** Derivado en UI desde `market_value` (€) ÷ 1e6 o columnas legacy */
   market_value_millions?: number | null;
   minutes_played?: number | null;
   goals?: number | null;
   assists?: number | null;
+  /** Partidos disputados (temporada) */
+  matches_played?: number | null;
+  /** Precisión de pase % (API-Football) */
+  pass_accuracy?: number | null;
   /** API-Football / Supabase: suele venir de `form_rating` */
   rating?: number | null;
 };
@@ -149,7 +155,19 @@ export type Database = {
       };
       sports_metrics: {
         Row: SportsMetricsRow;
-        Insert: Omit<SportsMetricsRow, never> & { athlete_id: string; date: string };
+        Insert: {
+          athlete_id: string;
+          date: string;
+          season: number;
+          minutes_played?: number;
+          goals?: number;
+          assists?: number;
+          rating?: number | null;
+          api_football_id?: number | null;
+          matches_played?: number | null;
+          pass_accuracy?: number | null;
+          market_value_millions?: number | null;
+        };
         Update: Partial<SportsMetricsRow>;
       };
       social_metrics: {

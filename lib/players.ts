@@ -81,10 +81,13 @@ function normalizeSportsMetrics(row: Record<string, unknown> | null): SportsMetr
     athlete_id: row.athlete_id,
     date: String(row.date ?? ""),
     season: num(row.season) ?? undefined,
+    api_football_id: num(row.api_football_id) ?? undefined,
     market_value_millions: marketMillions,
     minutes_played: num(row.minutes_played) ?? 0,
     goals: num(row.goals) ?? 0,
     assists: num(row.assists) ?? 0,
+    matches_played: num(row.matches_played) ?? undefined,
+    pass_accuracy: num(row.pass_accuracy) ?? undefined,
     rating: num(row.form_rating ?? row.rating),
   };
 }
