@@ -8,6 +8,7 @@ import { RankingTable } from "@/components/ranking-table";
 import { PlayerCardsGrid } from "@/components/player-cards-grid";
 import { ViewToggle } from "@/components/view-toggle";
 import { RankingsFilterBar } from "@/components/rankings-filter-bar";
+import { WeeklyMovers } from "@/components/weekly-movers";
 import type { Player } from "@/lib/players";
 import {
   applyRankingFilters,
@@ -77,6 +78,18 @@ export function HomeRankingClient({ initialPlayers }: Props) {
             </div>
           </div>
 
+          {viewMode === "table" ? (
+            <>
+              {filteredSorted.length > 0 ? (
+                <div className="mb-6">
+                  <HeroCards players={filteredSorted.slice(0, 3)} />
+                </div>
+              ) : null}
+            </>
+          ) : null}
+
+          <WeeklyMovers players={initialPlayers} />
+
           <div className="mb-6">
             <RankingsFilterBar
               league={league}
@@ -94,17 +107,9 @@ export function HomeRankingClient({ initialPlayers }: Props) {
           </div>
 
           {viewMode === "table" ? (
-            <>
-              {filteredSorted.length > 0 ? (
-                <div className="mb-8">
-                  <HeroCards players={filteredSorted.slice(0, 3)} />
-                </div>
-              ) : null}
-
-              <div className="bg-card rounded-[10px] border border-border overflow-hidden">
-                <RankingTable players={filteredSorted} />
-              </div>
-            </>
+            <div className="bg-card rounded-[10px] border border-border overflow-hidden">
+              <RankingTable players={filteredSorted} />
+            </div>
           ) : (
             <PlayerCardsGrid players={filteredSorted} />
           )}
