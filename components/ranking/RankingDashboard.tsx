@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import type { PlayerRow } from "@/types/database";
 import { formatScore } from "@/lib/format";
 import { PlayerAvatar } from "@/components/PlayerAvatar";
+import { nationalityToFlagEmoji } from "@/lib/v0-player";
 
 type Props = {
   players: PlayerRow[];
@@ -21,6 +22,199 @@ const positionLabels: Record<string, string> = {
 
 function positionBadge(pos: string) {
   return positionLabels[pos] ?? pos.slice(0, 3).toUpperCase();
+}
+
+/** Accent color by global rank (cycles every 8). */
+const RANK_ACCENTS = [
+  "#7C6FFF",
+  "#00E5A0",
+  "#FFB547",
+  "#4FC3F7",
+  "#7C6FFF",
+  "#00E5A0",
+  "#FF4D6A",
+  "#888888",
+] as const;
+
+function accentForRank(rank: number): string {
+  return RANK_ACCENTS[(Math.max(1, rank) - 1) % RANK_ACCENTS.length];
+}
+
+function playerInitials(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+const GAUGE_META = [
+  { key: "SPT", color: "#7C6FFF", get: (p: PlayerRow) => p.sports_score },
+  { key: "SOC", color: "#00E5A0", get: (p: PlayerRow) => p.social_score },
+  { key: "COM", color: "#FFB547", get: (p: PlayerRow) => p.commercial_score },
+  { key: "BRD", color: "#4FC3F7", get: (p: PlayerRow) => p.brand_fit_score },
+  { key: "MOM", color: "#FF6B9D", get: (p: PlayerRow) => p.momentum_score },
+  { key: "ADJ", color: "#69F0AE", get: (p: PlayerRow) => p.adjustment_score },
+] as const;
+
+/** Arc from -135° to +135° (270° sweep), math angles; y-up conversion for SVG. */
+function MiniArcGauge({
+  value,
+  color,
+  label,
+}: {
+  value: number;
+  color: string;
+  label: string;
+}) {
+  const score = Math.min(100, Math.max(0, Number.isFinite(value) ? value : 0));
+  const cx = 18;
+  const cy = 18;
+  const r = 12.5;
+  const toRad = (deg: number) => (deg * Math.PI) / 180;
+  const x1 = cx + r * Math.cos(toRad(-135));
+  const y1 = cy - r * Math.sin(toRad(-135));
+  const x2 = cx + r * Math.cos(toRad(135));
+  const y2 = cy - r * Math.sin(toRad(135));
+  const d = `M ${x1} ${y1} A ${r} ${r} 0 1 1 ${x2} ${y2}`;
+  const arcLen = (270 / 360) * 2 * Math.PI * r;
+  const offset = arcLen * (1 - score / 100);
+
+  return (
+    <div className="flex w-9 flex-col items-center gap-0.5">
+      <svg width={36} height={36} viewBox="0 0 36 36" className="shrink-0 overflow-visible" aria-hidden>
+        <path
+          d={d}
+          fill="none"
+          stroke="rgba(255,255,255,0.1)"
+          strokeWidth={3}
+          strokeLinecap="round"
+        />
+        <path
+          d={d}
+          fill="none"
+          stroke={color}
+          strokeWidth={3}
+          strokeLinecap="round"
+          strokeDasharray={arcLen}
+          strokeDashoffset={offset}
+          className="transition-[stroke-dashoffset] duration-500 ease-out"
+        />
+        <text
+          x={18}
+          y={21}
+          textAnchor="middle"
+          fill={color}
+          className="font-mono text-[8px] font-bold tabular-nums"
+          style={{ fontSize: 8 }}
+        >
+          {formatScore(score)}
+        </text>
+      </svg>
+      <span className="text-[8px] font-bold uppercase tracking-tight text-zinc-500">{label}</span>
+    </div>
+  );
+}
+
+function RankingPlayerCard({ player, rank }: { player: PlayerRow; rank: number }) {
+  const accent = accentForRank(rank);
+  const flag = nationalityToFlagEmoji(player.nationality);
+  const posLabel = positionBadge(player.position);
+  /** Placeholder until weekly CMV delta exists in data */
+  const trendVsWeek = 0;
+  const trendPositive = trendVsWeek >= 0;
+
+  return (
+    <Link
+      href={`/player/${player.id}`}
+      className="group block overflow-hidden rounded-2xl border border-white/[0.1] bg-[#0c0e14] shadow-lg transition hover:border-white/[0.18] hover:shadow-xl"
+    >
+      <div
+        className="relative h-[160px] w-full overflow-hidden rounded-t-2xl"
+        style={{
+          background: `linear-gradient(145deg, ${accent}2e 0%, #080a10 42%, #06070c 100%)`,
+        }}
+      >
+        <span
+          className="pointer-events-none absolute inset-0 flex items-center justify-center font-bold tabular-nums leading-none"
+          style={{
+            color: accent,
+            opacity: 0.05,
+            fontSize: 120,
+          }}
+          aria-hidden
+        >
+          {rank}
+        </span>
+        <div className="relative flex h-full flex-col px-4 pb-3 pt-3">
+          <div className="flex items-start justify-between gap-2">
+            <span className="rounded-full bg-black/35 px-2.5 py-1 font-mono text-[11px] font-bold tabular-nums text-white/90 ring-1 ring-white/10">
+              #{rank}
+            </span>
+            <span
+              className="rounded-full bg-black/35 px-2.5 py-1 font-mono text-[11px] font-bold tabular-nums"
+              style={{ color: accent, border: `1px solid ${accent}` }}
+            >
+              CMV {formatScore(Number(player.cmv_total))}
+            </span>
+          </div>
+          <div className="flex flex-1 items-center justify-center">
+            <div
+              className="flex h-[60px] w-[60px] items-center justify-center rounded-full border-2 font-mono text-lg font-bold tabular-nums text-white"
+              style={{
+                borderColor: accent,
+                backgroundColor: `${accent}26`,
+              }}
+            >
+              {playerInitials(player.name)}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="space-y-3 px-4 pb-4 pt-3">
+        <h3 className="text-[15px] font-bold leading-snug text-white group-hover:text-white/95">
+          {player.name}
+        </h3>
+        <p className="text-[11px] leading-relaxed text-zinc-500">
+          <span className="text-zinc-400">{player.club}</span>
+          <span className="mx-1 text-zinc-600">·</span>
+          <span>{posLabel}</span>
+          {flag ? (
+            <>
+              <span className="mx-1 text-zinc-600">·</span>
+              <span title={player.nationality ?? undefined}>{flag}</span>
+            </>
+          ) : null}
+        </p>
+
+        <div className="flex flex-nowrap justify-between gap-0.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          {GAUGE_META.map(({ key, color, get }) => (
+            <MiniArcGauge key={key} label={key} value={get(player)} color={color} />
+          ))}
+        </div>
+
+        <div
+          className={`flex items-center gap-1.5 text-[11px] font-semibold tabular-nums ${
+            trendPositive ? "text-emerald-400" : "text-rose-400"
+          }`}
+        >
+          {trendPositive ? (
+            <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+              <path d="M6 2.5 L10.5 9.5 L1.5 9.5 Z" />
+            </svg>
+          ) : (
+            <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 12 12" fill="currentColor" aria-hidden>
+              <path d="M6 9.5 L10.5 2.5 L1.5 2.5 Z" />
+            </svg>
+          )}
+          <span>
+            {trendPositive ? "+" : "−"}
+            {formatScore(Math.abs(trendVsWeek))} vs last week
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
 }
 
 const sidebarItems = [
@@ -371,53 +565,19 @@ export function RankingDashboard({ players, children }: Props) {
                   ) : null}
                 </div>
               ) : (
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-                  {filtered.map((p, index) => {
-                    const rank = players.findIndex((x) => x.id === p.id) + 1;
-                    return (
-                      <Link
-                        key={p.id}
-                        href={`/player/${p.id}`}
-                        className="group flex flex-col rounded-2xl border border-white/[0.1] bg-surface-card p-5 transition hover:border-accent/25 hover:bg-white/[0.03]"
-                      >
-                        <div className="flex items-start justify-between gap-3">
-                          <span className="font-mono text-sm font-bold text-zinc-500">#{rank}</span>
-                          <PlayerAvatar name={p.name} photoUrl={p.photo_url} size="md" />
-                        </div>
-                        <h3 className="mt-3 text-lg font-bold text-white group-hover:text-accent">
-                          {p.name}
-                        </h3>
-                        <p className="mt-1 text-sm text-zinc-400">{p.club}</p>
-                        {p.league ? (
-                          <p className="text-xs text-zinc-600">{p.league}</p>
-                        ) : null}
-                        <div className="mt-4 grid grid-cols-3 gap-2 border-t border-white/10 pt-4 text-center">
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase text-zinc-500">Sports</p>
-                            <p className="font-mono text-sm font-semibold text-zinc-200">
-                              {formatScore(Number(p.sports_score))}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase text-zinc-500">Social</p>
-                            <p className="font-mono text-sm font-semibold text-zinc-200">
-                              {formatScore(Number(p.social_score))}
-                            </p>
-                          </div>
-                          <div>
-                            <p className="text-[10px] font-semibold uppercase text-accent-muted">CMV</p>
-                            <p
-                              className="font-mono text-[16px] font-bold"
-                              style={{ color: CMV_GREEN }}
-                            >
-                              {formatScore(Number(p.cmv_total))}
-                            </p>
-                          </div>
-                        </div>
-                      </Link>
-                    );
-                  })}
-                </div>
+                <>
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+                    {filtered.map((p) => {
+                      const rank = players.findIndex((x) => x.id === p.id) + 1;
+                      return <RankingPlayerCard key={p.id} player={p} rank={rank} />;
+                    })}
+                  </div>
+                  {filtered.length === 0 ? (
+                    <p className="py-8 text-center text-base text-zinc-500">
+                      Ningún jugador coincide con «{query}».
+                    </p>
+                  ) : null}
+                </>
               )}
 
               <p className="text-lg leading-relaxed text-zinc-500">

@@ -107,6 +107,8 @@ export type CmvScoreWithAthleteClub = {
   adjustment_score: number;
   cmv_total: number;
   date: string;
+  /** Present on `cmv_scores` rows; useful for deduping without relying on nested joins only */
+  athlete_id?: string;
   athletes: {
     id: string;
     name: string;

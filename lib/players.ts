@@ -7,7 +7,9 @@ import type {
   SportsMetricsRow,
 } from "@/types/database";
 
+/** All CMV subscores + total (must match `cmv_scores` columns). */
 const cmvSelectWithJoins = `
+  athlete_id,
   sports_score,
   social_score,
   commercial_score,
@@ -29,6 +31,12 @@ const cmvSelectWithJoins = `
   )
 ` as const;
 
+function scoreFromRow(v: unknown): number {
+  if (v == null || v === "") return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
+}
+
 function mapCmvJoinToPlayer(row: CmvScoreWithAthleteClub): PlayerRow {
   const a = row.athletes;
   const clubName = a.clubs?.name ?? "";
@@ -38,13 +46,13 @@ function mapCmvJoinToPlayer(row: CmvScoreWithAthleteClub): PlayerRow {
     club: clubName,
     league: a.clubs?.league ?? null,
     position: a.position,
-    sports_score: Number(row.sports_score),
-    social_score: Number(row.social_score),
-    commercial_score: Number(row.commercial_score),
-    brand_fit_score: Number(row.brand_fit_score),
-    momentum_score: Number(row.momentum_score),
-    adjustment_score: Number(row.adjustment_score),
-    cmv_total: Number(row.cmv_total),
+    sports_score: scoreFromRow(row.sports_score),
+    social_score: scoreFromRow(row.social_score),
+    commercial_score: scoreFromRow(row.commercial_score),
+    brand_fit_score: scoreFromRow(row.brand_fit_score),
+    momentum_score: scoreFromRow(row.momentum_score),
+    adjustment_score: scoreFromRow(row.adjustment_score),
+    cmv_total: scoreFromRow(row.cmv_total),
     nationality: a.nationality,
     photo_url: a.photo_url ?? null,
   };
@@ -198,15 +206,11 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
 }
 
 /**
- * Equivalente a:
- * SELECT … cs.sports_score, cs.social_score, cs.commercial_score, cs.brand_fit_score,
- * cs.momentum_score, cs.adjustment_score, cs.cmv_total
- * FROM cmv_scores cs
- * JOIN athletes a ON a.id = cs.athlete_id
- * JOIN clubs c ON c.id = a.club_id
- * ORDER BY cs.cmv_total DESC
- * LIMIT 30
+ * Ranking por CMV usando la **fila más reciente** de cada jugador (`date` DESC), luego orden por `cmv_total`.
+ * Así los subscores COM/BRD/MOM/ADJ coinciden con el último snapshot y no con filas antiguas en el top.
  */
+const CMV_RANKING_FETCH_CAP = 3000;
+
 export async function getTopPlayersByCmv(limit = 30): Promise<PlayerRow[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
@@ -214,8 +218,8 @@ export async function getTopPlayersByCmv(limit = 30): Promise<PlayerRow[]> {
   const { data, error } = await supabase
     .from("cmv_scores")
     .select(cmvSelectWithJoins)
-    .order("cmv_total", { ascending: false })
-    .limit(limit);
+    .order("date", { ascending: false })
+    .limit(CMV_RANKING_FETCH_CAP);
 
   if (error) {
     console.error("getTopPlayersByCmv:", error.message);
@@ -223,7 +227,17 @@ export async function getTopPlayersByCmv(limit = 30): Promise<PlayerRow[]> {
   }
 
   const rows = (data ?? []) as CmvScoreWithAthleteClub[];
-  return rows.map(mapCmvJoinToPlayer);
+  const seen = new Set<string>();
+  const latestPerAthlete: CmvScoreWithAthleteClub[] = [];
+  for (const row of rows) {
+    const aid = row.athlete_id ?? row.athletes.id;
+    if (seen.has(aid)) continue;
+    seen.add(aid);
+    latestPerAthlete.push(row);
+  }
+
+  latestPerAthlete.sort((a, b) => scoreFromRow(b.cmv_total) - scoreFromRow(a.cmv_total));
+  return latestPerAthlete.slice(0, limit).map(mapCmvJoinToPlayer);
 }
 
 /** Posición en ranking según el orden de `getTopPlayersByCmv` (máx. `limit` jugadores). */
@@ -257,3 +271,11 @@ export async function getPlayerById(id: string): Promise<PlayerRow | null> {
     photo_url: profile.photo_url,
   };
 }
+
+export type { Player } from "./v0-player";
+export {
+  mapPlayerProfileToV0Player,
+  mapPlayerRowsToV0Players,
+  mapPlayerRowToV0Player,
+  nationalityToFlagEmoji,
+} from "./v0-player";
