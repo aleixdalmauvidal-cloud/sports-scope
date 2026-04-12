@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { Player } from "@/lib/players"
+import { Player, opportunityScoreAccent } from "@/lib/players"
 import { TrendingUp, TrendingDown, Minus } from "lucide-react"
 
 interface RankingTableProps {
@@ -48,6 +48,31 @@ function ScoreBar({ value, max = 100, bold = false }: { value: number; max?: num
         />
       </div>
     </div>
+  )
+}
+
+function OppBadge({ score }: { score: number }) {
+  const accent = opportunityScoreAccent(score)
+  const muted = score < 60
+  return (
+    <span
+      className="inline-flex min-w-[2.25rem] items-center justify-center rounded-md px-2 py-0.5 text-sm font-semibold tabular-nums"
+      style={
+        muted
+          ? {
+              color: "rgba(255,255,255,0.55)",
+              backgroundColor: "rgba(255,255,255,0.06)",
+              border: "1px solid rgba(255,255,255,0.1)",
+            }
+          : {
+              color: accent,
+              backgroundColor: `${accent}22`,
+              border: `1px solid ${accent}44`,
+            }
+      }
+    >
+      {score}
+    </span>
   )
 }
 
@@ -105,6 +130,12 @@ export function RankingTable({ players }: RankingTableProps) {
             </th>
             <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden xl:table-cell">
               Momentum
+            </th>
+            <th
+              className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider hidden xl:table-cell cursor-help"
+              title="Opportunity Score — commercial attractiveness right now"
+            >
+              OPP
             </th>
             <th className="text-left py-3 px-4 text-xs font-medium text-muted-foreground uppercase tracking-wider">
               7d
@@ -173,6 +204,11 @@ export function RankingTable({ players }: RankingTableProps) {
               <td className="py-5 px-4 hidden xl:table-cell">
                 <Link href={`/player/${player.id}`} className="block">
                   <span className="text-sm text-foreground">{player.momentumScore}</span>
+                </Link>
+              </td>
+              <td className="py-5 px-4 hidden xl:table-cell">
+                <Link href={`/player/${player.id}`} className="block">
+                  <OppBadge score={player.opportunityScore} />
                 </Link>
               </td>
               <td className="py-5 px-4">

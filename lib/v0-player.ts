@@ -26,6 +26,11 @@ export interface Player {
   shirtNumber: number;
   calledUp: boolean;
   cmvScore: number;
+  /**
+   * 0–100: how commercially attractive the player is for a brand deal right now
+   * (momentum, brand fit, adjustments, and room before deal saturation).
+   */
+  opportunityScore: number;
   sportsScore: number;
   socialScore: number;
   commercialScore: number;
@@ -327,9 +332,48 @@ function roundScore(n: number): number {
   return Math.round(Number.isFinite(n) ? n : 0);
 }
 
+/**
+ * Opportunity Score (0–100): momentum + brand fit + adjustments + headroom vs commercial saturation.
+ * Weights match product spec; computed from the same subscores shown in the UI.
+ */
+export function computeOpportunityScore(input: {
+  momentumScore: number;
+  brandFitScore: number;
+  adjustmentsScore: number;
+  commercialScore: number;
+}): number {
+  const m = Number.isFinite(input.momentumScore) ? input.momentumScore : 0;
+  const b = Number.isFinite(input.brandFitScore) ? input.brandFitScore : 0;
+  const a = Number.isFinite(input.adjustmentsScore) ? input.adjustmentsScore : 0;
+  const c = Number.isFinite(input.commercialScore) ? input.commercialScore : 0;
+  const cClamped = Math.min(100, Math.max(0, c));
+  const raw =
+    m * 0.35 + b * 0.25 + a * 0.25 + (100 - cClamped) * 0.15;
+  return Math.min(100, Math.max(0, Math.round(raw)));
+}
+
+/** Accent for OPP badges: high / mid / low. */
+export function opportunityScoreAccent(score: number): string {
+  if (score >= 80) return "#00E5A0";
+  if (score >= 60) return "#FFB547";
+  return "rgba(255,255,255,0.55)";
+}
+
 export function mapPlayerRowToV0Player(row: PlayerRow, rank: number): Player {
   const accent = accentForRank(rank);
   const cmv = roundScore(row.cmv_total);
+  const sportsScore = roundScore(row.sports_score);
+  const socialScore = roundScore(row.social_score);
+  const commercialScore = roundScore(row.commercial_score);
+  const brandFitScore = roundScore(row.brand_fit_score);
+  const momentumScore = roundScore(row.momentum_score);
+  const adjustmentsScore = roundScore(row.adjustment_score);
+  const opportunityScore = computeOpportunityScore({
+    momentumScore,
+    brandFitScore,
+    adjustmentsScore,
+    commercialScore,
+  });
   const nat = row.nationality?.trim() || "—";
   return {
     id: row.id,
@@ -349,12 +393,13 @@ export function mapPlayerRowToV0Player(row: PlayerRow, rank: number): Player {
     shirtNumber: rank,
     calledUp: false,
     cmvScore: cmv,
-    sportsScore: roundScore(row.sports_score),
-    socialScore: roundScore(row.social_score),
-    commercialScore: roundScore(row.commercial_score),
-    brandFitScore: roundScore(row.brand_fit_score),
-    momentumScore: roundScore(row.momentum_score),
-    adjustmentsScore: roundScore(row.adjustment_score),
+    opportunityScore,
+    sportsScore,
+    socialScore,
+    commercialScore,
+    brandFitScore,
+    momentumScore,
+    adjustmentsScore,
     weeklyChange: 0,
     instagram: "—",
     instagramGrowth: "—",

@@ -3,7 +3,7 @@ import Link from "next/link"
 import { ArrowLeft, ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
 import { CMVHistoryChart } from "@/components/cmv-history-chart"
-import { getPlayerProfile, mapPlayerProfileToV0Player } from "@/lib/players"
+import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
 import { formatScore } from "@/lib/format"
 
 interface PlayerPageProps {
@@ -360,24 +360,48 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 </div>
               </div>
 
-              {/* CMV Score */}
-              <div className="lg:text-right">
-                <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                  Commercial Market Value
-                </p>
-                <p 
-                  className="text-[120px] font-bold text-[#7C6FFF] leading-none" 
-                  style={{ textShadow: '0 0 80px rgba(124, 111, 255, 0.5), 0 0 120px rgba(124, 111, 255, 0.3)' }}
-                >
-                  {player.cmvScore}
-                </p>
-                <div className={`flex items-center gap-1 mt-3 ${isPositiveChange ? 'text-[#00E5A0]' : 'text-[#FF4D6A]'} lg:justify-end`}>
-                  {player.weeklyChange !== 0 && (
-                    isPositiveChange ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />
-                  )}
-                  <span className="text-sm font-medium">
-                    {isPositiveChange ? '+' : ''}{player.weeklyChange.toFixed(1)} vs last week
-                  </span>
+              {/* CMV + Opportunity (hero metrics) */}
+              <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-end lg:items-end xl:items-start gap-8 lg:gap-10 xl:gap-14 w-full lg:w-auto lg:max-w-none">
+                <div className="lg:text-right xl:text-right flex-1 min-w-0">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                    Commercial Market Value
+                  </p>
+                  <p 
+                    className="text-7xl sm:text-8xl md:text-[100px] lg:text-[120px] font-bold text-[#7C6FFF] leading-none" 
+                    style={{ textShadow: '0 0 80px rgba(124, 111, 255, 0.5), 0 0 120px rgba(124, 111, 255, 0.3)' }}
+                  >
+                    {player.cmvScore}
+                  </p>
+                  <div className={`flex items-center gap-1 mt-3 ${isPositiveChange ? 'text-[#00E5A0]' : 'text-[#FF4D6A]'} lg:justify-end`}>
+                    {player.weeklyChange !== 0 && (
+                      isPositiveChange ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />
+                    )}
+                    <span className="text-sm font-medium">
+                      {isPositiveChange ? '+' : ''}{player.weeklyChange.toFixed(1)} vs last week
+                    </span>
+                  </div>
+                </div>
+
+                <div className="lg:text-right xl:text-left flex-1 min-w-0 border-t border-border/60 pt-6 sm:border-t-0 sm:pt-0 lg:border-t-0 xl:border-l xl:border-border/60 xl:pl-10 xl:pt-0">
+                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
+                    Opportunity
+                  </p>
+                  <div className="flex items-center gap-3 lg:justify-end xl:justify-start">
+                    <span
+                      className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white/10"
+                      style={{ backgroundColor: opportunityScoreAccent(player.opportunityScore) }}
+                      aria-hidden
+                    />
+                    <p
+                      className="text-5xl sm:text-6xl md:text-7xl font-bold leading-none tabular-nums"
+                      style={{ color: opportunityScoreAccent(player.opportunityScore) }}
+                    >
+                      {player.opportunityScore}
+                    </p>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-3 max-w-[240px] lg:ml-auto xl:ml-0 leading-relaxed">
+                    How attractive this player is for a brand deal right now
+                  </p>
                 </div>
               </div>
             </div>

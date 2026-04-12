@@ -274,8 +274,10 @@ export async function getPlayerById(id: string): Promise<PlayerRow | null> {
 
 export type { Player } from "./v0-player";
 export {
+  computeOpportunityScore,
   mapPlayerProfileToV0Player,
   mapPlayerRowsToV0Players,
   mapPlayerRowToV0Player,
   nationalityToFlagEmoji,
+  opportunityScoreAccent,
 } from "./v0-player";

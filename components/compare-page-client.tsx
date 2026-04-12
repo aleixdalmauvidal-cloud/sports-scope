@@ -88,6 +88,7 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
   }, []);
 
   const cmvMax = maxIndexSet(selected.map((p) => p.cmvScore));
+  const oppMax = maxIndexSet(selected.map((p) => p.opportunityScore));
   const numericHighlights = SUB_ROWS.map((row) =>
     maxIndexSet(selected.map((p) => p[row.key] as number))
   );
@@ -293,6 +294,26 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                       style={{ color: cmvMax.has(i) ? p.accentColor : "#7C6FFF" }}
                     >
                       {formatScore(p.cmvScore)}
+                    </span>
+                  </div>
+                ))}
+
+                {/* Opportunity Score */}
+                <div className="px-3 py-3 text-sm font-semibold text-foreground border-b border-border bg-background/20">
+                  Opportunity Score
+                </div>
+                {selected.map((p, i) => (
+                  <div
+                    key={`opp-${p.id}`}
+                    className={`border-b border-l border-border px-3 py-4 text-center ${
+                      oppMax.has(i) ? "font-bold" : ""
+                    }`}
+                  >
+                    <span
+                      className="text-xl lg:text-2xl font-bold tabular-nums"
+                      style={{ color: oppMax.has(i) ? "#00E5A0" : "rgba(255,255,255,0.85)" }}
+                    >
+                      {formatScore(p.opportunityScore)}
                     </span>
                   </div>
                 ))}

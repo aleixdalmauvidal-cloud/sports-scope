@@ -136,6 +136,26 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
         >
           CMV {player.cmvScore}
         </div>
+
+        {/* Opportunity Score — prominent */}
+        <div
+          className="absolute bottom-3 right-3 flex flex-col items-end rounded-lg px-2.5 py-1.5"
+          style={{
+            backgroundColor: "rgba(0,0,0,0.5)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+          }}
+        >
+          <span className="text-[9px] font-bold uppercase tracking-wider text-muted-foreground leading-none mb-0.5">
+            OPP
+          </span>
+          <span
+            className="text-lg font-bold tabular-nums leading-none"
+            style={{ color: player.accentColor }}
+          >
+            {player.opportunityScore}
+          </span>
+        </div>
         
         {/* Player Initials Circle */}
         <div 
