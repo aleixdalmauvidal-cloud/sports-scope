@@ -31,7 +31,7 @@ export default function RootLayout({
       <body className="font-sans text-base leading-relaxed text-zinc-200 antialiased">
         <div className="relative flex min-h-screen flex-col">
           <SiteHeader />
-          <main className="relative flex-1">
+          <main className="relative w-full min-w-0 flex-1 overflow-x-hidden">
             <div
               className="pointer-events-none absolute inset-0 -z-10 opacity-[0.35] [background-image:linear-gradient(rgba(255,255,255,0.028)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.028)_1px,transparent_1px)] [background-size:40px_40px]"
               aria-hidden

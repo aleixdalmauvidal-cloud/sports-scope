@@ -1,4 +1,4 @@
-import { getSupabase } from "@/lib/supabase/client";
+import { getSupabase } from "@/lib/supabase";
 import type {
   CmvScoreWithAthleteClub,
   PlayerProfile,
@@ -10,6 +10,10 @@ import type {
 const cmvSelectWithJoins = `
   sports_score,
   social_score,
+  commercial_score,
+  brand_fit_score,
+  momentum_score,
+  adjustment_score,
   cmv_total,
   date,
   athletes!inner (
@@ -36,6 +40,10 @@ function mapCmvJoinToPlayer(row: CmvScoreWithAthleteClub): PlayerRow {
     position: a.position,
     sports_score: Number(row.sports_score),
     social_score: Number(row.social_score),
+    commercial_score: Number(row.commercial_score),
+    brand_fit_score: Number(row.brand_fit_score),
+    momentum_score: Number(row.momentum_score),
+    adjustment_score: Number(row.adjustment_score),
     cmv_total: Number(row.cmv_total),
     nationality: a.nationality,
     photo_url: a.photo_url ?? null,
@@ -101,7 +109,9 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
       .maybeSingle(),
     supabase
       .from("cmv_scores")
-      .select("sports_score, social_score, cmv_total")
+      .select(
+        "sports_score, social_score, commercial_score, brand_fit_score, momentum_score, adjustment_score, cmv_total"
+      )
       .eq("athlete_id", id)
       .order("date", { ascending: false })
       .limit(1)
@@ -148,7 +158,15 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
   };
 
   const cmv = cmvRes.data as
-    | { sports_score: number; social_score: number; cmv_total: number }
+    | {
+        sports_score: number;
+        social_score: number;
+        commercial_score: number;
+        brand_fit_score: number;
+        momentum_score: number;
+        adjustment_score: number;
+        cmv_total: number;
+      }
     | null;
 
   const cmv_rank = await getAthleteCmvRank(a.id, 500);
@@ -165,6 +183,10 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
     photo_url: a.photo_url ?? null,
     sports_score: cmv ? Number(cmv.sports_score) : 0,
     social_score: cmv ? Number(cmv.social_score) : 0,
+    commercial_score: cmv ? Number(cmv.commercial_score) : 0,
+    brand_fit_score: cmv ? Number(cmv.brand_fit_score) : 0,
+    momentum_score: cmv ? Number(cmv.momentum_score) : 0,
+    adjustment_score: cmv ? Number(cmv.adjustment_score) : 0,
     cmv_total: cmv ? Number(cmv.cmv_total) : 0,
     sports_metrics: normalizeSportsMetrics(
       sportRes.data as Record<string, unknown> | null
@@ -177,7 +199,8 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
 
 /**
  * Equivalente a:
- * SELECT a.id, a.name, c.name AS club, a.position, cs.sports_score, cs.social_score, cs.cmv_total
+ * SELECT … cs.sports_score, cs.social_score, cs.commercial_score, cs.brand_fit_score,
+ * cs.momentum_score, cs.adjustment_score, cs.cmv_total
  * FROM cmv_scores cs
  * JOIN athletes a ON a.id = cs.athlete_id
  * JOIN clubs c ON c.id = a.club_id
@@ -224,6 +247,10 @@ export async function getPlayerById(id: string): Promise<PlayerRow | null> {
     position: profile.position,
     sports_score: profile.sports_score,
     social_score: profile.social_score,
+    commercial_score: profile.commercial_score,
+    brand_fit_score: profile.brand_fit_score,
+    momentum_score: profile.momentum_score,
+    adjustment_score: profile.adjustment_score,
     cmv_total: profile.cmv_total,
     nationality: profile.nationality,
     age: profile.age,

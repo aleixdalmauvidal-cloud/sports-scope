@@ -5,7 +5,7 @@ import { PlayerAvatar } from "@/components/PlayerAvatar";
 import { PlayerProfileView } from "@/components/PlayerProfileView";
 import { formatScore } from "@/lib/format";
 import { getPlayerById, getPlayerProfile } from "@/lib/players";
-import { getSupabase } from "@/lib/supabase/client";
+import { getSupabase } from "@/lib/supabase";
 
 type Props = {
   params: { id: string };

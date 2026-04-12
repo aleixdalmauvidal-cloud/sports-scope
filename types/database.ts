@@ -8,6 +8,10 @@ export type PlayerRow = {
   position: string;
   sports_score: number;
   social_score: number;
+  commercial_score: number;
+  brand_fit_score: number;
+  momentum_score: number;
+  adjustment_score: number;
   cmv_total: number;
   nationality?: string | null;
   age?: number | null;
@@ -35,6 +39,10 @@ export type CmvScoreRow = {
   date: string;
   sports_score: number;
   social_score: number;
+  commercial_score: number;
+  brand_fit_score: number;
+  momentum_score: number;
+  adjustment_score: number;
   cmv_total: number;
 };
 
@@ -80,6 +88,10 @@ export type PlayerProfile = {
   photo_url: string | null;
   sports_score: number;
   social_score: number;
+  commercial_score: number;
+  brand_fit_score: number;
+  momentum_score: number;
+  adjustment_score: number;
   cmv_total: number;
   sports_metrics: SportsMetricsRow | null;
   social_metrics: SocialMetricsRow | null;
@@ -89,6 +101,10 @@ export type PlayerProfile = {
 export type CmvScoreWithAthleteClub = {
   sports_score: number;
   social_score: number;
+  commercial_score: number;
+  brand_fit_score: number;
+  momentum_score: number;
+  adjustment_score: number;
   cmv_total: number;
   date: string;
   athletes: {
@@ -121,6 +137,10 @@ export type Database = {
           date: string;
           sports_score?: number;
           social_score?: number;
+          commercial_score?: number;
+          brand_fit_score?: number;
+          momentum_score?: number;
+          adjustment_score?: number;
           cmv_total?: number;
         };
         Update: Partial<CmvScoreRow>;
