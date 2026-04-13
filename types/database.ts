@@ -26,6 +26,9 @@ export type AthleteRow = {
   club_id: string;
   age?: number | null;
   photo_url?: string | null;
+  /** API-Football player id (import + sync shortcut) */
+  api_football_player_id?: number | null;
+  status?: string | null;
 };
 
 export type ClubRow = {

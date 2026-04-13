@@ -462,3 +462,118 @@ export async function getPlayerStatsForClub(
   if (!stat) stat = bundle.statistics?.[0] ?? null;
   return bundleToParsed(bundle, stat, playerId);
 }
+
+/** Team block from GET /players/squads — `players` entries are often flat, not `{ player: {...} }`. */
+export type ApiSquadTeamBlock = {
+  team?: { id?: number; name?: string };
+  players?: unknown[];
+};
+
+export type SquadPlayer = {
+  apiFootballId: number;
+  name: string;
+  nationality: string | null;
+  positionRaw: string | null;
+  photo: string | null;
+  age: number | null;
+};
+
+/** Normalize one squad row: API returns either `{ player: { id, name, ... } }` or flat `{ id, name, ... }`. */
+function squadRowToPlayerPayload(row: unknown): Record<string, unknown> | null {
+  if (row == null || typeof row !== "object") return null;
+  const o = row as Record<string, unknown>;
+  if (o.player != null && typeof o.player === "object") {
+    return o.player as Record<string, unknown>;
+  }
+  if (o.id != null && o.name != null) {
+    return o;
+  }
+  return null;
+}
+
+function payloadToSquadPlayer(pl: Record<string, unknown>): SquadPlayer | null {
+  const id = pl.id;
+  const name = pl.name;
+  if (id == null || name == null || String(name).trim() === "") return null;
+  const nat = pl.nationality;
+  const pos = pl.position;
+  const photo = pl.photo;
+  const age = pl.age;
+  return {
+    apiFootballId: Number(id),
+    name: String(name).trim(),
+    nationality: nat != null && String(nat).trim() !== "" ? String(nat).trim() : null,
+    positionRaw: pos != null ? String(pos) : null,
+    photo: typeof photo === "string" && photo.trim() !== "" ? photo.trim() : null,
+    age: age != null && Number.isFinite(Number(age)) ? Number(age) : null,
+  };
+}
+
+let squadDebug541Done = false;
+
+/**
+ * GET /players/squads?team={teamId}
+ * Returns club name and squad list (player ids for import / sync).
+ * Uses a direct fetch so we can log the raw envelope for debugging (Real Madrid / team 541, once per process).
+ */
+export async function getTeamSquad(teamId: number): Promise<{
+  teamName: string;
+  players: SquadPlayer[];
+} | null> {
+  const url = buildUrl("/players/squads", { team: teamId });
+  console.log("[api-football] GET", url);
+  const res = await fetch(url, { headers: apiHeaders(), cache: "no-store" });
+  const text = await res.text();
+  let body: unknown;
+  try {
+    body = text ? JSON.parse(text) : {};
+  } catch {
+    throw new Error(`API-Football squads: invalid JSON (${res.status}): ${text.slice(0, 200)}`);
+  }
+  if (!res.ok) {
+    throw new Error(`API-Football squads HTTP ${res.status}: ${text.slice(0, 300)}`);
+  }
+
+  const env = body as ApiFootballEnvelope<unknown>;
+
+  if (teamId === 541 && !squadDebug541Done) {
+    squadDebug541Done = true;
+    console.log("[getTeamSquad DEBUG] Full raw API response:", JSON.stringify(body, null, 2));
+    console.log("[getTeamSquad DEBUG] envelope.response (axios-style: response.data.response):", JSON.stringify(env.response, null, 2));
+  }
+
+  if (env.errors) {
+    const err = env.errors;
+    const msg =
+      Array.isArray(err) && err.length
+        ? JSON.stringify(err[0])
+        : typeof err === "object" && err !== null && Object.keys(err as object).length > 0
+          ? JSON.stringify(err)
+          : null;
+    if (msg) throw new Error(`API-Football errors: ${msg}`);
+  }
+
+  const raw = env.response;
+  let block: ApiSquadTeamBlock | undefined;
+  if (Array.isArray(raw) && raw.length > 0) {
+    block = raw[0] as ApiSquadTeamBlock;
+  } else if (raw != null && typeof raw === "object" && !Array.isArray(raw)) {
+    const o = raw as Record<string, unknown>;
+    if (o.team != null || o.players != null) {
+      block = raw as ApiSquadTeamBlock;
+    }
+  }
+
+  const teamName = block?.team?.name?.trim();
+  if (!teamName) return null;
+
+  const players: SquadPlayer[] = [];
+  for (const row of block.players ?? []) {
+    const payload = squadRowToPlayerPayload(row);
+    if (!payload) continue;
+    const sp = payloadToSquadPlayer(payload);
+    if (sp) players.push(sp);
+  }
+
+  return { teamName, players };
+}

@@ -9,7 +9,7 @@
 
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
-import type { SearchPlayerHit } from "../lib/api-football";
+import type { ParsedPlayerSeasonStats, SearchPlayerHit } from "../lib/api-football";
 
 dotenv.config({ path: ".env.local" });
 
@@ -65,8 +65,13 @@ function sleep(ms: number): Promise<void> {
 
 async function main(): Promise<void> {
   const { getTopPlayersByCmv } = await import("../lib/players");
-  const { searchPlayer, getPlayerStatsForClub, scoreSearchPlayerHit, leagueIdsForPlayerSearch } =
-    await import("../lib/api-football");
+  const {
+    searchPlayer,
+    getPlayerStatsForClub,
+    getPlayerStats,
+    scoreSearchPlayerHit,
+    leagueIdsForPlayerSearch,
+  } = await import("../lib/api-football");
 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
 
@@ -101,39 +106,63 @@ async function main(): Promise<void> {
         await sleep(DELAY_BETWEEN_PLAYERS_MS);
       }
 
-      const leagueCandidates = leagueIdsForPlayerSearch(p.league, p.club);
-      let hits: SearchPlayerHit[] = [];
-      for (let li = 0; li < leagueCandidates.length; li++) {
-        if (li > 0) {
-          await sleep(DELAY_SEARCH_TO_STATS_MS);
-        }
-        const lid = leagueCandidates[li]!;
-        hits = await searchPlayer(searchName, SEASON, lid);
-        if (hits.length > 0) break;
-      }
+      let parsed: ParsedPlayerSeasonStats | null = null;
+      let triedStoredApiId = false;
 
-      if (hits.length === 0) {
-        console.warn(`${tag} FAIL: no search results (tried leagues ${leagueCandidates.join(", ")})`);
-        fail++;
-        continue;
-      }
+      const { data: athApi } = await supabase
+        .from("athletes")
+        .select("api_football_player_id")
+        .eq("id", p.id)
+        .maybeSingle();
 
-      let bestHit = hits[0]!;
-      let bestScore = scoreSearchPlayerHit(bestHit, p.club, p.league);
-      for (let j = 1; j < hits.length; j++) {
-        const h = hits[j]!;
-        const s = scoreSearchPlayerHit(h, p.club, p.league);
-        if (s > bestScore) {
-          bestScore = s;
-          bestHit = h;
+      const storedApiId = athApi?.api_football_player_id;
+      if (storedApiId != null && Number.isFinite(Number(storedApiId))) {
+        triedStoredApiId = true;
+        await sleep(DELAY_SEARCH_TO_STATS_MS);
+        parsed = await getPlayerStats(Number(storedApiId), SEASON);
+        if (!parsed) {
+          console.warn(`${tag} WARN: no stats for stored API#${storedApiId} — falling back to search`);
         }
       }
-
-      await sleep(DELAY_SEARCH_TO_STATS_MS);
-      const parsed = await getPlayerStatsForClub(bestHit.playerId, p.club, p.league, SEASON);
 
       if (!parsed) {
-        console.warn(`${tag} FAIL: no stats for API player ${bestHit.playerId}`);
+        if (triedStoredApiId) {
+          await sleep(DELAY_SEARCH_TO_STATS_MS);
+        }
+        const leagueCandidates = leagueIdsForPlayerSearch(p.league, p.club);
+        let hits: SearchPlayerHit[] = [];
+        for (let li = 0; li < leagueCandidates.length; li++) {
+          if (li > 0) {
+            await sleep(DELAY_SEARCH_TO_STATS_MS);
+          }
+          const lid = leagueCandidates[li]!;
+          hits = await searchPlayer(searchName, SEASON, lid);
+          if (hits.length > 0) break;
+        }
+
+        if (hits.length === 0) {
+          console.warn(`${tag} FAIL: no search results (tried leagues ${leagueCandidates.join(", ")})`);
+          fail++;
+          continue;
+        }
+
+        let bestHit = hits[0]!;
+        let bestScore = scoreSearchPlayerHit(bestHit, p.club, p.league);
+        for (let j = 1; j < hits.length; j++) {
+          const h = hits[j]!;
+          const s = scoreSearchPlayerHit(h, p.club, p.league);
+          if (s > bestScore) {
+            bestScore = s;
+            bestHit = h;
+          }
+        }
+
+        await sleep(DELAY_SEARCH_TO_STATS_MS);
+        parsed = await getPlayerStatsForClub(bestHit.playerId, p.club, p.league, SEASON);
+      }
+
+      if (!parsed) {
+        console.warn(`${tag} FAIL: could not resolve season stats`);
         fail++;
         continue;
       }
@@ -162,14 +191,13 @@ async function main(): Promise<void> {
       }
 
       const photoUrl = parsed.photoUrl;
-      if (photoUrl) {
-        const { error: photoError } = await supabase
-          .from("athletes")
-          .update({ photo_url: photoUrl })
-          .eq("id", p.id);
-        if (photoError) {
-          console.warn(`${tag} WARN: sports_metrics OK but photo update failed: ${photoError.message}`);
-        }
+      const athleteUpdate: { api_football_player_id: number; photo_url?: string | null } = {
+        api_football_player_id: parsed.apiFootballPlayerId,
+      };
+      if (photoUrl) athleteUpdate.photo_url = photoUrl;
+      const { error: athleteErr } = await supabase.from("athletes").update(athleteUpdate).eq("id", p.id);
+      if (athleteErr) {
+        console.warn(`${tag} WARN: sports_metrics OK but athlete update failed: ${athleteErr.message}`);
       }
 
       console.log(

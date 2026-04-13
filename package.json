@@ -7,7 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint .",
-    "sync:football": "npx tsx scripts/sync-football-stats.ts"
+    "sync:football": "npx tsx scripts/sync-football-stats.ts",
+    "import:players": "npx tsx scripts/import-players.ts",
+    "import:all": "npm run import:players && npm run sync:football"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
