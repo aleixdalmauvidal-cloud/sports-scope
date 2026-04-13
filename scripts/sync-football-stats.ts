@@ -161,6 +161,17 @@ async function main(): Promise<void> {
         continue;
       }
 
+      const photoUrl = parsed.photoUrl;
+      if (photoUrl) {
+        const { error: photoError } = await supabase
+          .from("athletes")
+          .update({ photo_url: photoUrl })
+          .eq("id", p.id);
+        if (photoError) {
+          console.warn(`${tag} WARN: sports_metrics OK but photo update failed: ${photoError.message}`);
+        }
+      }
+
       console.log(
         `${tag} OK · API#${parsed.apiFootballPlayerId} · ${parsed.goals}G ${parsed.assists}A · ${parsed.matchesPlayed} apps · ${parsed.minutesPlayed}′`
       );

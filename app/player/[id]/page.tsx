@@ -2,16 +2,12 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft, ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-react"
 import { Sidebar } from "@/components/sidebar"
-import { CMVHistoryChart } from "@/components/cmv-history-chart"
+import { PlayerAnalysisLocked } from "@/components/player-analysis-locked"
+import { PlayerProfileAnalysis } from "@/components/player-profile-analysis"
+import { PlayerStatStrip } from "@/components/player-stat-strip"
+import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
-import {
-  formatScore,
-  formatInteger,
-  formatFollowersCompact,
-  formatPercentValue,
-  formatFollowerGrowthAbsolute,
-  formatFormRating,
-} from "@/lib/format"
+import { formatScore } from "@/lib/format"
 
 interface PlayerPageProps {
   params: Promise<{ id: string }>
@@ -31,17 +27,6 @@ export async function generateMetadata({ params }: PlayerPageProps) {
   }
 }
 
-
-
-const breakdownItems = [
-  { key: "sportsScore", label: "Sports", weight: "20%", color: "#38A047" },
-  { key: "socialScore", label: "Social", weight: "35%", color: "#7A9490" },
-  { key: "commercialScore", label: "Commercial", weight: "15%", color: "#C8D8D4" },
-  { key: "brandFitScore", label: "Brand Fit", weight: "10%", color: "#4A5E58" },
-  { key: "momentumScore", label: "Momentum", weight: "10%", color: "#2D9E50" },
-  { key: "adjustmentsScore", label: "Adjustments", weight: "10%", color: "#2D7A3A" },
-] as const;
-
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { id } = await params
   const profile = await getPlayerProfile(id)
@@ -50,20 +35,20 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     notFound()
   }
 
+  let isAuthed = false
+  try {
+    const supabase = await createServerSupabaseClient()
+    const { data } = await supabase.auth.getUser()
+    isAuthed = !!data.user
+  } catch {
+    isAuthed = false
+  }
+
   const player = mapPlayerProfileToV0Player(profile)
 
   const isPositiveChange = player.weeklyChange >= 0
   const rankWatermark = profile.cmv_rank ?? player.rank
   const initials = player.name.split(" ").map((n) => n[0]).join("")
-  const sports = profile.sports_metrics
-  const social = profile.social_metrics
-
-  const instagramFollowers = formatFollowersCompact(social?.instagram_followers)
-  const tiktokFollowers = formatFollowersCompact(social?.tiktok_followers)
-  const passAccuracyDisplay =
-    sports?.pass_accuracy != null && Number.isFinite(Number(sports.pass_accuracy))
-      ? `${formatInteger(Number(sports.pass_accuracy))}%`
-      : "—"
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,8 +57,24 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
       <main className="ml-20 min-h-screen">
         <div className="p-6 lg:p-8">
           <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(260px,280px)_1fr]">
-            <section className="relative h-[360px] min-w-[260px] w-full overflow-hidden rounded-[12px] border border-border" style={{ background: player.photoGradient }}>
-              <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04]" viewBox="0 0 100 100" preserveAspectRatio="none">
+            <section
+              className="relative h-[360px] min-w-[260px] w-full overflow-hidden rounded-[12px] border border-border"
+              style={{ background: player.photo_url ? "#0D1110" : player.photoGradient }}
+            >
+              {player.photo_url ? (
+                <>
+                  <img
+                    src={player.photo_url}
+                    alt=""
+                    className="absolute inset-0 z-0 h-full w-full object-cover object-top"
+                  />
+                  <div
+                    aria-hidden
+                    className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#0D1110] via-[#0D1110]/45 to-transparent"
+                  />
+                </>
+              ) : null}
+              <svg className="pointer-events-none absolute inset-0 z-[2] h-full w-full opacity-[0.04]" viewBox="0 0 100 100" preserveAspectRatio="none">
                 {Array.from({ length: 6 }).map((_, i) => (
                   <line key={`h-${i}`} x1="0" y1={i * 20} x2="100" y2={i * 20} stroke="white" strokeWidth="0.6" />
                 ))}
@@ -81,7 +82,8 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                   <line key={`v-${i}`} x1={i * 20} y1="0" x2={i * 20} y2="100" stroke="white" strokeWidth="0.6" />
                 ))}
               </svg>
-              <svg className="pointer-events-none absolute inset-0 m-auto h-44 w-44 opacity-[0.06]" viewBox="0 0 100 100">
+              {!player.photo_url ? (
+              <svg className="pointer-events-none absolute inset-0 z-[2] m-auto h-44 w-44 opacity-[0.06]" viewBox="0 0 100 100">
                 <circle cx="50" cy="26" r="8" fill="white" />
                 <rect x="43" y="35" width="14" height="26" rx="6" fill="white" />
                 <line x1="44" y1="46" x2="29" y2="54" stroke="white" strokeWidth="5" strokeLinecap="round" />
@@ -89,16 +91,17 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 <line x1="48" y1="62" x2="40" y2="81" stroke="white" strokeWidth="5" strokeLinecap="round" />
                 <line x1="52" y1="62" x2="67" y2="78" stroke="white" strokeWidth="5" strokeLinecap="round" />
               </svg>
+              ) : null}
               <span
-                className="pointer-events-none absolute bottom-2 right-3 font-display text-[180px] font-extrabold leading-none text-white"
+                className="pointer-events-none absolute bottom-2 right-3 z-[2] font-display text-[180px] font-extrabold leading-none text-white"
                 style={{ opacity: 0.04 }}
               >
                 {rankWatermark}
               </span>
-              <Link href="/" className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-black/35 px-3 py-1.5 text-xs text-[#C8D8D4]">
+              <Link href="/rankings" className="absolute left-3 top-3 z-[3] inline-flex items-center gap-1 rounded-full border border-border bg-black/35 px-3 py-1.5 text-xs text-[#C8D8D4]">
                 <ArrowLeft className="h-3.5 w-3.5" /> Rankings
               </Link>
-              <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+              <div className="absolute right-3 top-3 z-[3] flex flex-col items-end gap-2">
                 <span className="rounded-full border border-border bg-black/35 px-2.5 py-1 text-[11px] text-[#C8D8D4]">
                   {player.flag} {player.nationality}
                 </span>
@@ -108,10 +111,12 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                   </span>
                 ) : null}
               </div>
-              <div className="absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#38A047] bg-[rgba(45,122,58,0.15)] text-2xl font-display font-bold text-[#E8F5EA]">
+              {!player.photo_url ? (
+              <div className="absolute left-1/2 top-1/2 z-[3] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#38A047] bg-[rgba(45,122,58,0.15)] text-2xl font-display font-bold text-[#E8F5EA]">
                 {initials}
               </div>
-              <span className="absolute bottom-3 right-3 rounded-full border border-border bg-black/35 px-3 py-1 text-xs text-[#C8D8D4]">
+              ) : null}
+              <span className="absolute bottom-3 right-3 z-[3] rounded-full border border-border bg-black/35 px-3 py-1 text-xs text-[#C8D8D4]">
                 {player.position}
               </span>
             </section>
@@ -164,108 +169,11 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-                <div className="rounded-[10px] border border-border bg-card p-4">
-                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.goals ?? null)}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Goals</p>
-                </div>
-                <div className="rounded-[10px] border border-border bg-card p-4">
-                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.assists ?? null)}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Assists</p>
-                </div>
-                <div className="rounded-[10px] border border-border bg-card p-4">
-                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.matches_played ?? null)}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Apps</p>
-                </div>
-                <div className="rounded-[10px] border border-border bg-card p-4">
-                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.minutes_played ?? null)}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Minutes</p>
-                </div>
-              </div>
+              {isAuthed ? <PlayerStatStrip profile={profile} /> : null}
             </section>
           </div>
 
-          <section className="mb-8">
-            <p className="section-title mb-3">CMV Breakdown</p>
-            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
-              {breakdownItems.map((item) => (
-                <div
-                  key={item.key}
-                  className="rounded-[10px] border border-border bg-card p-4"
-                  style={{ borderTop: `3px solid ${item.color}` }}
-                >
-                  <p className="font-display text-[28px] font-bold leading-none" style={{ color: item.color }}>
-                    {formatScore(player[item.key])}
-                  </p>
-                  <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[#4A5E58]">{item.label}</p>
-                  <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#2E3D38]">Weight {item.weight}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-
-          <section className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div className="rounded-[10px] border border-border bg-card p-5">
-              <p className="section-title mb-4">Social</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Instagram</p>
-                  <p className="font-display text-xl text-white">{instagramFollowers}</p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">TikTok</p>
-                  <p className="font-display text-xl text-white">{tiktokFollowers}</p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Engagement</p>
-                  <p className="font-display text-xl text-white">{formatPercentValue(social?.engagement_rate)}</p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Growth 30d</p>
-                  <p className="font-display text-xl text-white">{formatFollowerGrowthAbsolute(social?.followers_growth_30d)}</p>
-                </div>
-              </div>
-            </div>
-            <div className="rounded-[10px] border border-border bg-card p-5">
-              <p className="section-title mb-4">Sports</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Minutes</p>
-                  <p className="font-display text-xl text-white">{formatInteger(sports?.minutes_played ?? null)}</p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Form rating</p>
-                  <p className="font-display text-xl text-white">{formatFormRating(sports?.rating ?? null)}</p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Pass Accuracy</p>
-                  <p className="font-display text-xl text-white">{passAccuracyDisplay}</p>
-                </div>
-                <div className="rounded-lg border border-border p-3">
-                  <p className="text-xs text-[#7A9490]">Matches</p>
-                  <p className="font-display text-xl text-white">{formatInteger(sports?.matches_played ?? null)}</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <section className="mb-8">
-            <p className="section-title mb-3">CMV History (90 Days)</p>
-            <div className="rounded-[10px] border border-border bg-card p-6">
-              <CMVHistoryChart data={player.cmvHistory} />
-            </div>
-          </section>
-
-          <section className="mb-8">
-            <p className="section-title mb-3">Brand Verticals</p>
-            <div className="flex flex-wrap gap-2">
-              {(player.brandVerticals.length > 0 ? player.brandVerticals : ["Performance", "Lifestyle", "Tech"]).map((vertical) => (
-                <span key={vertical} className="rounded-full border border-[#38A047]/30 bg-[#38A047]/15 px-3 py-1.5 text-xs text-[#E8F5EA]">
-                  {vertical}
-                </span>
-              ))}
-            </div>
-          </section>
+          {isAuthed ? <PlayerProfileAnalysis player={player} profile={profile} /> : <PlayerAnalysisLocked />}
         </div>
       </main>
     </div>

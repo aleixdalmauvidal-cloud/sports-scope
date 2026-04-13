@@ -8,7 +8,9 @@ function isConfigured(url: string | undefined, key: string | undefined) {
 }
 
 /**
- * Browser/server Supabase client (anon key). Returns null if env is missing or placeholder.
+ * Lightweight anon client for scripts and server data reads without a user session.
+ * For authenticated requests in the app, use `createServerSupabaseClient()` or
+ * `getSupabaseBrowserClient()` from `@/lib/supabase/server` and `@/lib/supabase/browser`.
  */
 export function getSupabase(): SupabaseClient<Database> | null {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;

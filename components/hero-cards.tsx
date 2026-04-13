@@ -65,8 +65,33 @@ export function HeroCards({ players }: HeroCardsProps) {
             </span>
           </div>
 
-          <div className="relative z-10 mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 text-lg font-semibold" style={{ borderColor: "rgba(56,160,71,0.22)", backgroundColor: "rgba(56,160,71,0.15)", color: "#E8F5EA" }}>
-            {player.name.split(" ").map((n) => n[0]).join("")}
+          <div
+            className="relative z-10 mb-4 flex h-16 w-16 items-center justify-center overflow-hidden rounded-full border-2 text-lg font-semibold"
+            style={
+              player.photo_url
+                ? { borderColor: "rgba(56,160,71,0.22)" }
+                : {
+                    borderColor: "rgba(56,160,71,0.22)",
+                    backgroundColor: "rgba(56,160,71,0.15)",
+                    color: "#E8F5EA",
+                  }
+            }
+          >
+            {player.photo_url ? (
+              <>
+                <img
+                  src={player.photo_url}
+                  alt=""
+                  className="absolute inset-0 h-full w-full object-cover object-top"
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[#0D1110] via-transparent to-transparent opacity-90"
+                />
+              </>
+            ) : (
+              player.name.split(" ").map((n) => n[0]).join("")
+            )}
           </div>
 
           <div className="relative z-10 mb-4">

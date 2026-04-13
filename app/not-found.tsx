@@ -9,7 +9,7 @@ export default function NotFound() {
         That player or page does not exist, or it was removed.
       </p>
       <Link
-        href="/"
+        href="/rankings"
         className="mt-8 inline-flex items-center rounded-xl bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90"
       >
         Back to rankings

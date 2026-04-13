@@ -135,6 +135,8 @@ export type ApiStatistic = {
 
 export type ParsedPlayerSeasonStats = {
   apiFootballPlayerId: number;
+  /** From API `response[0].player.photo` (e.g. media.api-sports.io). */
+  photoUrl: string | null;
   goals: number;
   assists: number;
   minutesPlayed: number;
@@ -329,9 +331,13 @@ function bundleToParsed(
 
   const rating = parseFloatSafe(games.rating);
   const passAccuracy = parsePassAccuracy(passes.accuracy);
+  const rawPhoto = bundle.player?.photo;
+  const photoUrl =
+    typeof rawPhoto === "string" && rawPhoto.trim() !== "" ? rawPhoto.trim() : null;
 
   return {
     apiFootballPlayerId: Number(pid),
+    photoUrl,
     goals: parseIntSafe(goals.total, 0),
     assists: parseIntSafe(goals.assists, 0),
     minutesPlayed: parseIntSafe(games.minutes, 0),

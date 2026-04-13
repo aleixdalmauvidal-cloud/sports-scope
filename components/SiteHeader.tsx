@@ -19,7 +19,7 @@ export function SiteHeader() {
         </Link>
         <nav className="flex items-center gap-1">
           <Link
-            href="/"
+            href="/rankings"
             className="rounded-lg px-4 py-2 text-base font-medium text-zinc-300 transition hover:bg-white/[0.08] hover:text-white"
           >
             Ranking

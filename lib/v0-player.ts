@@ -47,6 +47,8 @@ export interface Player {
   followerGrowth30d: string;
   brandVerticals: string[];
   cmvHistory: number[];
+  /** Supabase `athletes.photo_url` (e.g. API-Football). */
+  photo_url: string | null;
 }
 
 const RANK_ACCENTS = [
@@ -410,6 +412,7 @@ export function mapPlayerRowToV0Player(row: PlayerRow, rank: number): Player {
     followerGrowth30d: "—",
     brandVerticals: [],
     cmvHistory: Array.from({ length: 15 }, () => cmv),
+    photo_url: row.photo_url ?? null,
   };
 }
 

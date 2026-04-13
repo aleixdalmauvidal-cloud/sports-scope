@@ -79,10 +79,24 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
       {/* Photo Area */}
       <div 
         className="relative h-40 flex items-center justify-center overflow-hidden"
-        style={{ background: player.bgGradient }}
+        style={{ background: player.photo_url ? "#0D1110" : player.bgGradient }}
       >
+        {player.photo_url ? (
+          <>
+            <img
+              src={player.photo_url}
+              alt=""
+              className="absolute inset-0 z-[1] h-full w-full object-cover object-top"
+            />
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0 z-[2] bg-gradient-to-t from-[#0D1110] via-transparent to-transparent"
+            />
+          </>
+        ) : null}
+
         {/* Dots pattern in top-right */}
-        <div className="absolute top-3 right-3 grid grid-cols-3 gap-1">
+        <div className="absolute top-3 right-3 z-[3] grid grid-cols-3 gap-1">
           {[...Array(9)].map((_, i) => (
             <div 
               key={i}
@@ -93,6 +107,7 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
         </div>
         
         {/* Football player silhouette */}
+        {!player.photo_url ? (
         <svg 
           className="absolute inset-0 w-full h-full"
           viewBox="0 0 100 100"
@@ -111,23 +126,24 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
             <path d="M 8 -20 Q 15 -25 20 -20" strokeWidth="4" stroke={player.accentColor} fill="none" style={{ opacity: 0.15 }} /> {/* Right arm */}
           </g>
         </svg>
+        ) : null}
         
         {/* Shirt number watermark */}
         <span 
-          className="absolute text-[120px] font-bold select-none"
+          className="absolute inset-0 z-[3] flex items-center justify-center text-[120px] font-bold select-none"
           style={{ color: player.accentColor, opacity: 0.08 }}
         >
           {displayRank}
         </span>
         
         {/* Rank Badge */}
-        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full text-xs font-bold text-foreground" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
+        <div className="absolute top-3 left-3 z-[4] px-2.5 py-1 rounded-full text-xs font-bold text-foreground" style={{ backgroundColor: "rgba(0,0,0,0.6)" }}>
           #{displayRank}
         </div>
         
         {/* CMV Badge */}
         <div 
-          className="absolute top-12 right-3 px-2.5 py-1 rounded-full text-xs font-bold"
+          className="absolute top-12 right-3 z-[4] px-2.5 py-1 rounded-full text-xs font-bold"
           style={{ 
             backgroundColor: "rgba(0,0,0,0.4)",
             border: `2px solid ${player.accentColor}`,
@@ -139,7 +155,7 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
 
         {/* Opportunity Score — prominent */}
         <div
-          className="absolute bottom-3 right-3 flex flex-col items-end rounded-lg px-2.5 py-1.5"
+          className="absolute bottom-3 right-3 z-[4] flex flex-col items-end rounded-lg px-2.5 py-1.5"
           style={{
             backgroundColor: "rgba(0,0,0,0.5)",
             border: "1px solid rgba(255,255,255,0.12)",
@@ -158,8 +174,9 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
         </div>
         
         {/* Player Initials Circle */}
+        {!player.photo_url ? (
         <div 
-          className="relative z-10 w-14 h-14 rounded-full flex items-center justify-center"
+          className="relative z-[4] w-14 h-14 rounded-full flex items-center justify-center"
           style={{ 
             backgroundColor: `${player.accentColor}20`,
             border: `2px solid ${player.accentColor}99`,
@@ -172,14 +189,17 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
             {player.name.split(' ').map(n => n[0]).join('')}
           </span>
         </div>
+        ) : null}
         
-        {/* Gradient fade at bottom */}
+        {/* Gradient fade at bottom (no photo only — photo path uses full-area fade above) */}
+        {!player.photo_url ? (
         <div 
-          className="absolute bottom-0 left-0 right-0 h-16"
+          className="absolute bottom-0 left-0 right-0 z-[3] h-16"
           style={{
-            background: `linear-gradient(to top, #0F0F1C, transparent)`
+            background: `linear-gradient(to top, #0D1110, transparent)`
           }}
         />
+        ) : null}
       </div>
       
       {/* Card Body */}

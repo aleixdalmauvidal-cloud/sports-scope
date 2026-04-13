@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { Trophy, User, ArrowLeftRight, Shield, Sparkles, Settings } from "lucide-react"
+import { Trophy, User, ArrowLeftRight, Shield, Sparkles } from "lucide-react"
+import { SidebarAuthFooter } from "@/components/sidebar-auth-footer"
 
 const navItems = [
-  { icon: Trophy, label: "Rankings", href: "/", active: true },
+  { icon: Trophy, label: "Rankings", href: "/rankings", active: true },
   { icon: User, label: "Players", href: "/players" },
   { icon: ArrowLeftRight, label: "Compare", href: "/compare" },
   { icon: Shield, label: "Clubs", href: "/clubs" },
@@ -40,7 +41,9 @@ export function Sidebar() {
       <nav className="flex-1 flex flex-col items-center gap-2">
         {navItems.map((item) => {
           const isActive =
-            item.href === "/" ? pathname === "/" : pathname === item.href
+            item.href === "/rankings"
+              ? pathname === "/rankings"
+              : pathname === item.href
           const Icon = item.icon
           
           return (
@@ -73,14 +76,9 @@ export function Sidebar() {
         })}
       </nav>
 
-      {/* Bottom section */}
-      <div className="flex flex-col items-center gap-2">
-        <button className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
-          <Settings className="w-5 h-5" />
-        </button>
-        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#2D7A3A] to-[#38A047] text-xs font-medium text-white">
-          JD
-        </div>
+      {/* Bottom: auth */}
+      <div className="mt-auto flex w-full flex-col items-center border-t border-border pt-3">
+        <SidebarAuthFooter />
       </div>
     </aside>
   )

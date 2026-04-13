@@ -218,7 +218,7 @@ function RankingPlayerCard({ player, rank }: { player: PlayerRow; rank: number }
 }
 
 const sidebarItems = [
-  { label: "Ranking", href: "/", icon: "trophy", active: true },
+  { label: "Ranking", href: "/rankings", icon: "trophy", active: true },
   { label: "Analítica", href: "#", icon: "chart", active: false },
   { label: "Jugadores", href: "#", icon: "users", active: false },
   { label: "Ajustes", href: "#", icon: "settings", active: false },
@@ -350,7 +350,7 @@ export function RankingDashboard({ players, children }: Props) {
                 <SidebarIcon name={item.icon} />
               </span>
             );
-            return item.href === "/" ? (
+            return item.href.startsWith("/") ? (
               <Link key={item.label} href={item.href}>
                 {content}
               </Link>

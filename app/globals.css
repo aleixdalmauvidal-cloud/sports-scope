@@ -121,4 +121,17 @@
     color: var(--green-bright);
     font-family: var(--font-inter), "Inter", sans-serif;
   }
+
+  .landing-stat-marquee {
+    animation: landing-stat-marquee 24s linear infinite;
+  }
+}
+
+@keyframes landing-stat-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
 }

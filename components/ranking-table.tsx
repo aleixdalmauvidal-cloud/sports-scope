@@ -159,8 +159,18 @@ export function RankingTable({ players }: RankingTableProps) {
               </td>
               <td className="py-5 px-4">
                 <Link href={`/player/${player.id}`} className="flex items-center gap-3">
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2D7A3A]/30 to-[#38A047]/30 text-xs font-medium text-foreground">
-                    {player.name.split(' ').map(n => n[0]).join('')}
+                  <div className="flex h-[30px] w-[30px] shrink-0 overflow-hidden rounded-lg bg-gradient-to-br from-[#2D7A3A]/30 to-[#38A047]/30 text-xs font-medium text-foreground">
+                    {player.photo_url ? (
+                      <img
+                        src={player.photo_url}
+                        alt=""
+                        className="h-full w-full object-cover object-top"
+                      />
+                    ) : (
+                      <span className="flex h-full w-full items-center justify-center">
+                        {player.name.split(" ").map((n) => n[0]).join("")}
+                      </span>
+                    )}
                   </div>
                   <div>
                     <p className="text-sm font-medium text-foreground transition-colors group-hover:text-[#38A047]">
