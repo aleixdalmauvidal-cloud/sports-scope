@@ -80,10 +80,8 @@ export type SportsMetricsRow = {
 export type SocialMetricsRow = {
   athlete_id: string;
   date?: string | null;
-  /** Normalizado desde `ig_followers` */
-  instagram_followers?: number | null;
-  /** Normalizado desde `tt_followers` */
-  tiktok_followers?: number | null;
+  ig_followers?: number | null;
+  tt_followers?: number | null;
   engagement_rate?: number | null;
   avg_views_per_post?: number | null;
   /** Normalizado desde `follower_growth_30d` (seguidores absolutos, no %) */

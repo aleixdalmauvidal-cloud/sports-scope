@@ -1,10 +1,12 @@
 /**
  * Compute CMV subscores from sports_metrics + social_metrics and insert cmv_scores
  * for athletes that have sports data but no cmv_scores row yet.
+ * With `--force`, recalculates every athlete that has sports_metrics (ignores existing CMV).
  *
  * Env: NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY
  *
  * Run: npm run calc:cmv
+ *      npx tsx scripts/calculate-cmv.ts --force
  *
  * Apply migration: supabase/migrations/20260413140000_cmv_scores_score_version.sql
  */
@@ -90,8 +92,8 @@ function ratingTo100(rating: number | null | undefined): number {
 
 function hasSocialSignal(s: SocialRow | undefined): boolean {
   if (!s) return false;
-  const ig = Number(s.instagram_followers ?? 0);
-  const tt = Number(s.tiktok_followers ?? 0);
+  const ig = Number(s.ig_followers ?? 0);
+  const tt = Number(s.tt_followers ?? 0);
   const er = s.engagement_rate;
   if (ig + tt > 0) return true;
   if (er != null && Number.isFinite(Number(er)) && Number(er) > 0) return true;
@@ -103,8 +105,8 @@ function socialScoreFromData(
   poolLogFollowers: number[],
   poolEngagement: number[]
 ): number {
-  const ig = Number(s.instagram_followers ?? 0);
-  const tt = Number(s.tiktok_followers ?? 0);
+  const ig = Number(s.ig_followers ?? 0);
+  const tt = Number(s.tt_followers ?? 0);
   const total = ig + tt;
   const logF = Math.log10(1 + total);
   const folPct = percentileStrictBelow(poolLogFollowers, logF);
@@ -147,6 +149,7 @@ async function main(): Promise<void> {
 
   const supabase = createClient<Database>(url, readRequiredServiceRoleKey());
   const today = new Date().toISOString().split("T")[0]!;
+  const force = process.argv.includes("--force");
 
   console.log("[calc:cmv] Loading sports_metrics…");
   const allSports = await fetchAllRows<SportsRow>(supabase, "sports_metrics", "*");
@@ -169,19 +172,25 @@ async function main(): Promise<void> {
   const poolLogFollowers: number[] = [];
   const poolEngagement: number[] = [];
   for (const s of latestSocial.values()) {
-    const ig = Number(s.instagram_followers ?? 0);
-    const tt = Number(s.tiktok_followers ?? 0);
+    const ig = Number(s.ig_followers ?? 0);
+    const tt = Number(s.tt_followers ?? 0);
     poolLogFollowers.push(Math.log10(1 + ig + tt));
     const er = s.engagement_rate;
     if (er != null && Number.isFinite(Number(er))) poolEngagement.push(Number(er));
   }
 
-  console.log("[calc:cmv] Loading existing cmv_scores athlete_ids…");
-  const cmvRows = await fetchAllRows<{ athlete_id: string }>(supabase, "cmv_scores", "athlete_id");
-  const hasCmv = new Set(cmvRows.map((r) => r.athlete_id));
-
-  const targets = [...latestSports.keys()].filter((id) => !hasCmv.has(id));
-  console.log(`[calc:cmv] Athletes with sports_metrics, no CMV yet: ${targets.length}`);
+  let targets: string[];
+  if (force) {
+    targets = [...latestSports.keys()];
+    console.log("[calc:cmv] --force: recalculating CMV for all athletes with sports_metrics");
+    console.log(`[calc:cmv] Athletes with sports_metrics (full recompute): ${targets.length}`);
+  } else {
+    console.log("[calc:cmv] Loading existing cmv_scores athlete_ids…");
+    const cmvRows = await fetchAllRows<{ athlete_id: string }>(supabase, "cmv_scores", "athlete_id");
+    const hasCmv = new Set(cmvRows.map((r) => r.athlete_id));
+    targets = [...latestSports.keys()].filter((id) => !hasCmv.has(id));
+    console.log(`[calc:cmv] Athletes with sports_metrics, no CMV yet: ${targets.length}`);
+  }
 
   if (targets.length === 0) {
     console.log("[calc:cmv] Nothing to do.");
@@ -270,7 +279,9 @@ async function main(): Promise<void> {
     }
   }
 
-  console.log(`[calc:cmv] Done. score_version=${SCORE_VERSION} date=${today}`);
+  console.log(
+    `[calc:cmv] Done. score_version=${SCORE_VERSION} date=${today}${force ? " (force)" : ""}`
+  );
 }
 
 main().catch((e) => {

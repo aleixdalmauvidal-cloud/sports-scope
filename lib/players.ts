@@ -106,8 +106,8 @@ function normalizeSocialMetrics(row: Record<string, unknown> | null): SocialMetr
   return {
     athlete_id: row.athlete_id,
     date: row.date != null ? String(row.date) : null,
-    instagram_followers: num(row.ig_followers ?? row.instagram_followers ?? row.instagram),
-    tiktok_followers: num(row.tt_followers ?? row.tiktok_followers ?? row.tiktok),
+    ig_followers: num(row.ig_followers ?? row.instagram_followers ?? row.instagram),
+    tt_followers: num(row.tt_followers ?? row.tiktok_followers ?? row.tiktok),
     engagement_rate: num(row.engagement_rate),
     avg_views_per_post: num(row.avg_views_per_post ?? row.avg_views),
     followers_growth_30d: num(row.follower_growth_30d ?? row.followers_growth_30d),

@@ -28,8 +28,8 @@ export function PlayerProfileAnalysis({ player, profile }: Props) {
   const sports = profile.sports_metrics;
   const social = profile.social_metrics;
 
-  const instagramFollowers = formatFollowersCompact(social?.instagram_followers);
-  const tiktokFollowers = formatFollowersCompact(social?.tiktok_followers);
+  const instagramFollowers = formatFollowersCompact(social?.ig_followers);
+  const tiktokFollowers = formatFollowersCompact(social?.tt_followers);
   const passAccuracyDisplay =
     sports?.pass_accuracy != null && Number.isFinite(Number(sports.pass_accuracy))
       ? `${formatInteger(Number(sports.pass_accuracy))}%`

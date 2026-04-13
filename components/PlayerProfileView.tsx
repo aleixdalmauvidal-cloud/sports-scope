@@ -104,11 +104,11 @@ export function PlayerProfileView({ profile }: Props) {
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <StatCard
             label="Seguidores Instagram"
-            value={formatFollowersCompact(soc?.instagram_followers ?? null)}
+            value={formatFollowersCompact(soc?.ig_followers ?? null)}
           />
           <StatCard
             label="Seguidores TikTok"
-            value={formatFollowersCompact(soc?.tiktok_followers ?? null)}
+            value={formatFollowersCompact(soc?.tt_followers ?? null)}
           />
           <StatCard
             label="Engagement rate"
