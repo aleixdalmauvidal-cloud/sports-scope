@@ -1,5 +1,5 @@
 /**
- * Sync API-Football season stats into Supabase `sports_metrics` for the top 30 CMV athletes.
+ * Sync API-Football season stats into Supabase `sports_metrics` for the top 100 CMV athletes.
  *
  * Env: API_FOOTBALL_KEY, API_FOOTBALL_URL (optional),
  *      NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (required — bypasses RLS; never expose client-side)
@@ -85,10 +85,10 @@ async function main(): Promise<void> {
   }
 
   const supabase = createClient(url, serviceRoleKey);
-  const players = await getTopPlayersByCmv(30);
+  const players = await getTopPlayersByCmv(100);
 
   if (players.length === 0) {
-    console.error("[sync:football] No players returned from getTopPlayersByCmv(30). Check Supabase env.");
+    console.error("[sync:football] No players returned from getTopPlayersByCmv(100). Check Supabase env.");
     process.exit(1);
   }
 

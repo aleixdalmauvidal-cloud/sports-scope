@@ -1,3 +1,9 @@
+/** Fila en directorio /players (ranking CMV global + OPP derivado). */
+export type PlayerDirectoryRow = PlayerRow & {
+  cmv_rank: number;
+  opportunity_score: number;
+};
+
 /** Vista aplanada para ranking y perfil (UI) */
 export type PlayerRow = {
   id: string;
@@ -47,6 +53,7 @@ export type CmvScoreRow = {
   momentum_score: number;
   adjustment_score: number;
   cmv_total: number;
+  score_version?: string | null;
 };
 
 /** Fila en sports_metrics (valores esperados en Supabase) */
@@ -153,6 +160,7 @@ export type Database = {
           momentum_score?: number;
           adjustment_score?: number;
           cmv_total?: number;
+          score_version?: string | null;
         };
         Update: Partial<CmvScoreRow>;
       };

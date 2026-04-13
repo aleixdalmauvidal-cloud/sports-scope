@@ -70,7 +70,7 @@ export function HomeRankingClient({ initialPlayers }: Props) {
               </p>
               <h1 className="font-display text-[26px] font-bold text-foreground">Rankings CMV</h1>
               <p className="mt-1 text-[11px] text-[#4A5E58]">
-                Top 30 · Commercial Market Value
+                Top 15 · Commercial Market Value
               </p>
             </div>
 

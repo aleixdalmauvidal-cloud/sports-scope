@@ -12,7 +12,7 @@ export default async function ComparePage({
 }: {
   searchParams: Promise<{ with?: string }>;
 }) {
-  const rows = await getTopPlayersByCmv(30);
+  const rows = await getTopPlayersByCmv(100);
   const players = mapPlayerRowsToV0Players(rows);
   const { with: withId } = await searchParams;
   return <ComparePageClient initialPlayers={players} preselectId={withId} />;

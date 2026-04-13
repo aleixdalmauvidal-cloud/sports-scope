@@ -9,7 +9,7 @@ export const metadata: Metadata = {
 };
 
 export default async function RankingsPage() {
-  const rows = await getTopPlayersByCmv(30);
+  const rows = await getTopPlayersByCmv(15);
   const players = mapPlayerRowsToV0Players(rows);
   return <HomeRankingClient initialPlayers={players} />;
 }

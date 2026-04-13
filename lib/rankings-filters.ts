@@ -1,4 +1,4 @@
-import type { Player } from "@/lib/players";
+import type { Player } from "@/lib/v0-player";
 
 export const LEAGUE_OPTIONS = [
   "All",
@@ -59,21 +59,43 @@ function normPosition(s: string): string {
   return s.trim().toLowerCase().replace(/\./g, "");
 }
 
-export function playerMatchesLeague(player: Player, filterLeague: LeagueFilterValue): boolean {
+export function leagueMatchesFilter(
+  league: string | null | undefined,
+  filterLeague: LeagueFilterValue
+): boolean {
   if (filterLeague === "All") return true;
-  const hay = normLeague(player.league);
+  const hay = normLeague(league);
   if (!hay) return false;
   const needles = LEAGUE_SUBSTRINGS[filterLeague];
   const compact = hay.replace(/\s+/g, "");
   return needles.some((n) => hay.includes(n) || compact.includes(n.replace(/\s+/g, "")));
 }
 
-export function playerMatchesPosition(player: Player, filterPos: PositionFilterValue): boolean {
+export function playerMatchesLeague(player: Player, filterLeague: LeagueFilterValue): boolean {
+  return leagueMatchesFilter(player.league, filterLeague);
+}
+
+export function positionMatchesFilter(position: string, filterPos: PositionFilterValue): boolean {
   if (filterPos === "All") return true;
-  const p = normPosition(player.position);
+  const p = normPosition(position);
   if (!p) return false;
   const tokens = POSITION_TOKENS[filterPos];
   return tokens.some((t) => p === t || p.startsWith(`${t} `) || p.includes(` ${t}`) || p.endsWith(t));
+}
+
+export function playerMatchesPosition(player: Player, filterPos: PositionFilterValue): boolean {
+  return positionMatchesFilter(player.position, filterPos);
+}
+
+/** Etiqueta corta de posición para tablas densas (FW / MF / DF / GK). */
+export function abbreviatePositionLabel(position: string): string {
+  const p = position?.trim();
+  if (!p) return "—";
+  if (positionMatchesFilter(p, "Goalkeeper")) return "GK";
+  if (positionMatchesFilter(p, "Defender")) return "DF";
+  if (positionMatchesFilter(p, "Midfielder")) return "MF";
+  if (positionMatchesFilter(p, "Forward")) return "FW";
+  return p;
 }
 
 export function playerMatchesCmvRange(player: Player, range: CmvRangeValue): boolean {

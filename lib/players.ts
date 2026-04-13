@@ -1,6 +1,15 @@
+import { cache } from "react";
+import {
+  leagueMatchesFilter,
+  positionMatchesFilter,
+  type LeagueFilterValue,
+  type PositionFilterValue,
+} from "@/lib/rankings-filters";
 import { getSupabase } from "@/lib/supabase";
+import { computeOpportunityScore } from "@/lib/v0-player";
 import type {
   CmvScoreWithAthleteClub,
+  PlayerDirectoryRow,
   PlayerProfile,
   PlayerRow,
   SocialMetricsRow,
@@ -214,7 +223,7 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
  */
 const CMV_RANKING_FETCH_CAP = 3000;
 
-export async function getTopPlayersByCmv(limit = 30): Promise<PlayerRow[]> {
+export async function getTopPlayersByCmv(limit = 100): Promise<PlayerRow[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
@@ -253,6 +262,267 @@ export async function getAthleteCmvRank(
   return i === -1 ? null : i + 1;
 }
 
+const CMV_FULL_SCAN_BATCH = 4000;
+const CMV_FULL_SCAN_ROW_CAP = 120_000;
+
+const ABBREV_TO_POSITION: Record<"FW" | "MF" | "DF" | "GK", PositionFilterValue> = {
+  FW: "Forward",
+  MF: "Midfielder",
+  DF: "Defender",
+  GK: "Goalkeeper",
+};
+
+export type PlayersDirectoryPositionAbbrev = "All" | "FW" | "MF" | "DF" | "GK";
+
+export type PlayersDirectoryCmvRange = "all" | "60plus" | "40-60" | "20-40" | "under20";
+
+export type PlayersDirectorySort = "cmv" | "sports" | "social" | "momentum";
+
+export interface GetPlayersWithFiltersOptions {
+  search?: string;
+  league?: LeagueFilterValue;
+  position?: PlayersDirectoryPositionAbbrev;
+  cmvRange?: PlayersDirectoryCmvRange;
+  sort?: PlayersDirectorySort;
+  page?: number;
+  pageSize?: number;
+}
+
+export interface GetPlayersWithFiltersResult {
+  players: PlayerDirectoryRow[];
+  totalCount: number;
+  /** Página efectiva (acotada si `page` en URL era mayor que el total). */
+  page: number;
+}
+
+export interface PlayerDatabaseStats {
+  playerCount: number;
+  leagueCount: number;
+  clubCount: number;
+}
+
+async function loadAllLatestCmvPlayerRows(): Promise<PlayerRow[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+
+  const { count: athleteCount } = await supabase
+    .from("athletes")
+    .select("*", { count: "exact", head: true });
+
+  const target = athleteCount ?? 0;
+  const seen = new Map<string, CmvScoreWithAthleteClub>();
+  let offset = 0;
+
+  while (offset < CMV_FULL_SCAN_ROW_CAP) {
+    const { data, error } = await supabase
+      .from("cmv_scores")
+      .select(cmvSelectWithJoins)
+      .order("date", { ascending: false })
+      .range(offset, offset + CMV_FULL_SCAN_BATCH - 1);
+
+    if (error) {
+      console.error("loadAllLatestCmvPlayerRows:", error.message);
+      break;
+    }
+    if (!data?.length) break;
+
+    let added = 0;
+    for (const row of data as CmvScoreWithAthleteClub[]) {
+      const aid = row.athlete_id ?? row.athletes?.id;
+      if (!aid || !row.athletes) continue;
+      if (!seen.has(aid)) {
+        seen.set(aid, row);
+        added++;
+      }
+    }
+
+    if (data.length < CMV_FULL_SCAN_BATCH) break;
+    if (added === 0) break;
+
+    offset += data.length;
+    if (target > 0 && seen.size >= target) break;
+  }
+
+  return [...seen.values()].map(mapCmvJoinToPlayer);
+}
+
+const getCachedLatestPlayerRows = cache(async (): Promise<PlayerRow[]> => {
+  return loadAllLatestCmvPlayerRows();
+});
+
+function matchesDirectoryCmvRange(cmv: number, range: PlayersDirectoryCmvRange): boolean {
+  switch (range) {
+    case "all":
+      return true;
+    case "60plus":
+      return cmv >= 60;
+    case "40-60":
+      return cmv >= 40 && cmv < 60;
+    case "20-40":
+      return cmv >= 20 && cmv < 40;
+    case "under20":
+      return cmv < 20;
+    default:
+      return true;
+  }
+}
+
+function rowMatchesDirectorySearch(row: PlayerRow, search: string): boolean {
+  const q = search.trim().toLowerCase();
+  if (!q) return true;
+  return (
+    row.name.toLowerCase().includes(q) ||
+    row.club.toLowerCase().includes(q) ||
+    String(Math.round(row.cmv_total)).includes(q)
+  );
+}
+
+function sortDirectoryRows(
+  rows: PlayerDirectoryRow[],
+  sort: PlayersDirectorySort
+): PlayerDirectoryRow[] {
+  const arr = [...rows];
+  switch (sort) {
+    case "cmv":
+      arr.sort((a, b) => scoreFromRow(b.cmv_total) - scoreFromRow(a.cmv_total));
+      break;
+    case "sports":
+      arr.sort((a, b) => scoreFromRow(b.sports_score) - scoreFromRow(a.sports_score));
+      break;
+    case "social":
+      arr.sort((a, b) => scoreFromRow(b.social_score) - scoreFromRow(a.social_score));
+      break;
+    case "momentum":
+      arr.sort((a, b) => scoreFromRow(b.momentum_score) - scoreFromRow(a.momentum_score));
+      break;
+    default:
+      break;
+  }
+  return arr;
+}
+
+/**
+ * Último snapshot CMV por jugador (mismo criterio que el ranking), con filtros y paginación.
+ * Pensado para `/players`: un único barrido por request (React `cache`).
+ */
+export async function getPlayersWithFilters(
+  options: GetPlayersWithFiltersOptions = {}
+): Promise<GetPlayersWithFiltersResult> {
+  const {
+    search = "",
+    league = "All",
+    position = "All",
+    cmvRange = "all",
+    sort = "cmv",
+    page = 1,
+    pageSize = 50,
+  } = options;
+
+  const allRows = await getCachedLatestPlayerRows();
+  const sortedByCmv = [...allRows].sort(
+    (a, b) => scoreFromRow(b.cmv_total) - scoreFromRow(a.cmv_total)
+  );
+
+  const withRank: PlayerDirectoryRow[] = sortedByCmv.map((row, i) => {
+    const sportsScore = scoreFromRow(row.sports_score);
+    const socialScore = scoreFromRow(row.social_score);
+    const commercialScore = scoreFromRow(row.commercial_score);
+    const brandFitScore = scoreFromRow(row.brand_fit_score);
+    const momentumScore = scoreFromRow(row.momentum_score);
+    const adjustmentsScore = scoreFromRow(row.adjustment_score);
+    return {
+      ...row,
+      cmv_rank: i + 1,
+      opportunity_score: computeOpportunityScore({
+        momentumScore,
+        brandFitScore,
+        adjustmentsScore,
+        commercialScore,
+      }),
+    };
+  });
+
+  const filtered = withRank.filter((row) => {
+    if (!rowMatchesDirectorySearch(row, search)) return false;
+    if (!leagueMatchesFilter(row.league, league)) return false;
+    if (position !== "All") {
+      const posKey = position as keyof typeof ABBREV_TO_POSITION;
+      if (!positionMatchesFilter(row.position, ABBREV_TO_POSITION[posKey])) return false;
+    }
+    if (!matchesDirectoryCmvRange(scoreFromRow(row.cmv_total), cmvRange)) return false;
+    return true;
+  });
+
+  const sorted = sortDirectoryRows(filtered, sort);
+  const totalCount = sorted.length;
+  const ps = Math.min(100, Math.max(1, Math.floor(pageSize) || 50));
+  const maxPage = Math.max(1, Math.ceil(totalCount / ps) || 1);
+  const p = Math.min(Math.max(1, Math.floor(page) || 1), maxPage);
+  const start = (p - 1) * ps;
+  const players = sorted.slice(start, start + ps);
+
+  return { players, totalCount, page: p };
+}
+
+export async function getPlayerDatabaseStats(): Promise<PlayerDatabaseStats> {
+  const rows = await getCachedLatestPlayerRows();
+  const leagues = new Set<string>();
+  const clubs = new Set<string>();
+  for (const r of rows) {
+    if (r.league?.trim()) leagues.add(r.league.trim());
+    if (r.club?.trim()) clubs.add(r.club.trim());
+  }
+  return {
+    playerCount: rows.length,
+    leagueCount: leagues.size,
+    clubCount: clubs.size,
+  };
+}
+
+/** Delta entre los dos `cmv_total` más recientes por jugador (aprox. variación reciente). */
+export async function getCmvDeltaLatestTwoForAthletes(
+  athleteIds: string[]
+): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
+  if (athleteIds.length === 0) return out;
+
+  const supabase = getSupabase();
+  if (!supabase) return out;
+
+  const { data, error } = await supabase
+    .from("cmv_scores")
+    .select("athlete_id, cmv_total, date")
+    .in("athlete_id", athleteIds);
+
+  if (error) {
+    console.error("getCmvDeltaLatestTwoForAthletes:", error.message);
+    return out;
+  }
+
+  type Entry = { total: number; date: string };
+  type CmvDeltaRow = { athlete_id: string; cmv_total: unknown; date: unknown };
+  const byId = new Map<string, Entry[]>();
+  for (const row of (data ?? []) as CmvDeltaRow[]) {
+    const id = row.athlete_id;
+    const list = byId.get(id) ?? [];
+    list.push({
+      total: scoreFromRow(row.cmv_total),
+      date: String(row.date ?? ""),
+    });
+    byId.set(id, list);
+  }
+
+  for (const [id, list] of byId) {
+    list.sort((a, b) => b.date.localeCompare(a.date));
+    if (list.length >= 2) {
+      const delta = list[0]!.total - list[1]!.total;
+      out.set(id, Math.round(delta * 10) / 10);
+    }
+  }
+
+  return out;
+}
+
 export async function getPlayerById(id: string): Promise<PlayerRow | null> {
   const profile = await getPlayerProfile(id);
   if (!profile) return null;
@@ -276,6 +546,7 @@ export async function getPlayerById(id: string): Promise<PlayerRow | null> {
 }
 
 export type { Player } from "./v0-player";
+export type { PlayerDirectoryRow } from "@/types/database";
 export {
   computeOpportunityScore,
   mapPlayerProfileToV0Player,
