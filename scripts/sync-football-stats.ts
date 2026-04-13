@@ -33,9 +33,31 @@ const serviceRoleKey = readRequiredServiceRoleKey();
 
 const SEASON = 2024;
 /** Free tier ~10 req/min; spacing between athletes keeps 2 calls/player safe. */
-const DELAY_BETWEEN_PLAYERS_MS = 7000;
+const DELAY_BETWEEN_PLAYERS_MS = 8000;
 /** Pause after search before the stats request (same athlete). */
 const DELAY_SEARCH_TO_STATS_MS = 3000;
+const PLAYER_NAME_ALIASES: Record<string, string> = {
+  "Vinicius Jr": "Vinicius Junior",
+  "Erling Haaland": "Haaland",
+  "Jude Bellingham": "Bellingham",
+  "Bukayo Saka": "Saka",
+  "Rodrigo De Paul": "De Paul",
+  "Bradley Barcola": "Barcola",
+  "Julian Alvarez": "Alvarez",
+  "Phil Foden": "Foden",
+  "Federico Valverde": "Valverde",
+  "Ousmane Dembele": "Dembele",
+  "Luis Diaz": "Diaz",
+  "Martin Odegaard": "Odegaard",
+  "Declan Rice": "Rice",
+  "Alexis Mac Allister": "Mac Allister",
+  "Darwin Nunez": "Nunez",
+  "Antoine Griezmann": "Griezmann",
+  "Robert Lewandowski": "Lewandowski",
+  "Kai Havertz": "Havertz",
+  "Kevin De Bruyne": "De Bruyne",
+  "Alexander Sorloth": "Sorloth",
+};
 
 function sleep(ms: number): Promise<void> {
   return new Promise((r) => setTimeout(r, ms));
@@ -72,6 +94,7 @@ async function main(): Promise<void> {
   for (let i = 0; i < players.length; i++) {
     const p = players[i]!;
     const tag = `[${i + 1}/${players.length}] ${p.name}`;
+    const searchName = PLAYER_NAME_ALIASES[p.name] ?? p.name;
 
     try {
       if (i > 0) {
@@ -85,7 +108,7 @@ async function main(): Promise<void> {
           await sleep(DELAY_SEARCH_TO_STATS_MS);
         }
         const lid = leagueCandidates[li]!;
-        hits = await searchPlayer(p.name, SEASON, lid);
+        hits = await searchPlayer(searchName, SEASON, lid);
         if (hits.length > 0) break;
       }
 
