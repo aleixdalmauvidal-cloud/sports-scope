@@ -1,14 +1,13 @@
 "use client";
 
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Sidebar } from "@/components/sidebar";
-import { ArcGauge, subscoreColors } from "@/components/arc-gauge";
 import type { Player } from "@/lib/players";
 import { formatScore } from "@/lib/format";
 import { Search, X } from "lucide-react";
 
-const BG = "#080810";
-const CARD = "#10101C";
+const BG = "#0D1110";
+const CARD = "#1C2420";
 
 function playerInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -28,12 +27,12 @@ function maxIndexSet(nums: number[]): Set<number> {
 }
 
 const SUB_ROWS = [
-  { key: "sportsScore" as const, label: "Sports Value", abbr: "SPT", color: subscoreColors.sports },
-  { key: "socialScore" as const, label: "Social & Marketing", abbr: "SOC", color: subscoreColors.social },
-  { key: "commercialScore" as const, label: "Commercial History", abbr: "COM", color: subscoreColors.commercial },
-  { key: "brandFitScore" as const, label: "Brand Fit", abbr: "BRD", color: subscoreColors.brandFit },
-  { key: "momentumScore" as const, label: "Momentum", abbr: "MOM", color: subscoreColors.momentum },
-  { key: "adjustmentsScore" as const, label: "Adjustments", abbr: "ADJ", color: subscoreColors.adjustments },
+  { key: "sportsScore" as const, label: "Sports Value", color: "#38A047" },
+  { key: "socialScore" as const, label: "Social & Marketing", color: "#7A9490" },
+  { key: "commercialScore" as const, label: "Commercial History", color: "#C8D8D4" },
+  { key: "brandFitScore" as const, label: "Brand Fit", color: "#4A5E58" },
+  { key: "momentumScore" as const, label: "Momentum", color: "#2D9E50" },
+  { key: "adjustmentsScore" as const, label: "Adjustments", color: "#2D7A3A" },
 ] as const;
 
 interface Props {
@@ -87,11 +86,24 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
     setSelectedIds((prev) => prev.filter((x) => x !== id));
   }, []);
 
-  const cmvMax = maxIndexSet(selected.map((p) => p.cmvScore));
-  const oppMax = maxIndexSet(selected.map((p) => p.opportunityScore));
-  const numericHighlights = SUB_ROWS.map((row) =>
-    maxIndexSet(selected.map((p) => p[row.key] as number))
-  );
+  const cmvMax = maxIndexSet(selected.map((p) => p.cmvScore))
+  const oppMax = maxIndexSet(selected.map((p) => p.opportunityScore))
+  const numericHighlights = SUB_ROWS.map((row) => maxIndexSet(selected.map((p) => p[row.key] as number)))
+  const scoreWins = selected.map((_, idx) => {
+    let wins = 0
+    if (cmvMax.has(idx)) wins += 1
+    if (oppMax.has(idx)) wins += 1
+    numericHighlights.forEach((set) => {
+      if (set.has(idx)) wins += 1
+    })
+    return wins
+  })
+  const bestScore = scoreWins.length > 0 ? Math.max(...scoreWins) : 0
+  const bestIndexes = scoreWins.map((wins, idx) => (wins === bestScore ? idx : -1)).filter((idx) => idx !== -1)
+  const verdictText =
+    bestIndexes.length === 1 && selected[bestIndexes[0]]
+      ? `${selected[bestIndexes[0]].name} leads the comparison by winning ${bestScore} categories and is the strongest current brand-fit recommendation.`
+      : "The comparison is balanced. Use campaign objective and regional fit as tie-breakers before selecting a lead athlete."
 
   const searchWrapRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -111,22 +123,38 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
       <main className="ml-20 min-h-screen">
         <div className="p-6 lg:p-8 max-w-[1600px] mx-auto">
           <header className="mb-8">
-            <h1 className="text-2xl lg:text-3xl font-bold text-foreground">Compare Players</h1>
-            <p className="text-sm text-muted-foreground mt-1">
+            <h1 className="font-display text-2xl font-bold text-foreground lg:text-3xl">Compare Players</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               Compare CMV profiles side by side
             </p>
           </header>
 
           {/* Selector */}
           <section
-            className="rounded-[10px] border border-border p-4 lg:p-5 mb-8"
+            className="mb-8 rounded-[10px] border border-border p-4 lg:p-5"
             style={{ backgroundColor: CARD }}
           >
-            <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-3">
-              Add players (2–4)
-            </p>
-            <div className="relative max-w-xl" ref={searchWrapRef}>
-              <div className="relative">
+            <p className="section-title mb-3">Player Selector</p>
+            <div className="flex flex-wrap items-center gap-2">
+              {selected.map((p, idx) => (
+                <span key={p.id} className="inline-flex items-center gap-2 rounded-lg border border-[rgba(56,160,71,0.22)] bg-card px-3 py-2 text-sm">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full border border-[rgba(56,160,71,0.22)] bg-[rgba(45,122,58,0.15)] text-[11px] font-semibold text-[#E8F5EA]">
+                    {playerInitials(p.name)}
+                  </span>
+                  <span className="font-medium text-foreground">{p.name}</span>
+                  <span className="font-display text-xs text-[#38A047]">{formatScore(p.cmvScore)}</span>
+                  <button
+                    type="button"
+                    aria-label={`Remove ${p.name}`}
+                    className="rounded p-0.5 text-muted-foreground hover:bg-[rgba(45,122,58,0.04)] hover:text-foreground"
+                    onClick={() => removePlayer(p.id)}
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                  {idx < selected.length - 1 ? <span className="ml-1 text-xs text-[#2E3D38]">VS</span> : null}
+                </span>
+              ))}
+              <div className="relative min-w-[260px] flex-1" ref={searchWrapRef}>
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <input
                   type="search"
@@ -136,8 +164,8 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                     setOpen(true);
                   }}
                   onFocus={() => setOpen(true)}
-                  placeholder="Search by name, club, or CMV…"
-                  className="w-full rounded-lg border border-border bg-background py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-[#7C6FFF]/30"
+                  placeholder="Add player"
+                  className="w-full rounded-lg border border-dashed border-[rgba(56,160,71,0.22)] bg-background py-2.5 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground outline-none focus:ring-2 focus:ring-[#2D7A3A]/50"
                 />
               </div>
               {open && filteredPool.length > 0 && (
@@ -151,7 +179,7 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                       <button
                         type="button"
                         role="option"
-                        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm hover:bg-white/[0.06] transition-colors"
+                        className="flex w-full items-center justify-between gap-3 px-3 py-2.5 text-left text-sm transition-colors hover:bg-[rgba(45,122,58,0.04)]"
                         onMouseDown={(e) => e.preventDefault()}
                         onClick={() => addPlayer(p.id)}
                       >
@@ -159,7 +187,7 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                         <span className="text-muted-foreground truncate text-xs shrink-0 max-w-[40%]">
                           {p.club}
                         </span>
-                        <span className="font-mono text-xs font-semibold text-[#00E5A0] shrink-0">
+                        <span className="font-display text-xs font-semibold text-[#38A047] shrink-0">
                           {formatScore(p.cmvScore)}
                         </span>
                       </button>
@@ -177,25 +205,6 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
               )}
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
-              {selected.map((p) => (
-                <span
-                  key={p.id}
-                  className="inline-flex items-center gap-2 rounded-full border border-border bg-background/80 pl-3 pr-1 py-1 text-sm"
-                >
-                  <span className="font-medium text-foreground max-w-[140px] truncate">{p.name}</span>
-                  <span className="text-muted-foreground text-xs font-mono">{formatScore(p.cmvScore)}</span>
-                  <button
-                    type="button"
-                    aria-label={`Remove ${p.name}`}
-                    className="rounded-full p-1 text-muted-foreground hover:bg-white/10 hover:text-foreground"
-                    onClick={() => removePlayer(p.id)}
-                  >
-                    <X className="h-3.5 w-3.5" />
-                  </button>
-                </span>
-              ))}
-            </div>
             {selected.length >= 4 && (
               <p className="text-xs text-muted-foreground mt-2">Maximum 4 players selected.</p>
             )}
@@ -211,120 +220,81 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
           ) : (
             <div className="overflow-x-auto rounded-[10px] border border-border" style={{ backgroundColor: CARD }}>
               <div
-                className="grid min-w-[720px]"
+                className="grid min-w-[860px]"
                 style={{
-                  gridTemplateColumns: `minmax(160px, 200px) repeat(${selected.length}, minmax(140px, 1fr))`,
+                  gridTemplateColumns: `180px repeat(${selected.length}, minmax(170px, 1fr))`,
                 }}
               >
-                {/* Header row: empty corner + player cards */}
-                <div className="p-3 border-b border-border bg-background/30" />
+                <div className="border-b border-border bg-background/30 p-3" />
                 {selected.map((p) => (
                   <div
                     key={`h-${p.id}`}
-                    className="border-b border-l border-border p-4"
+                    className="relative border-b border-l border-border p-4"
                     style={{
-                      background: `linear-gradient(180deg, ${p.accentColor}22 0%, ${CARD} 55%)`,
+                      background: "linear-gradient(145deg, #0D2B18 0%, #1A4A2A 60%, #0D1110 100%)",
                     }}
                   >
-                    <div className="flex flex-col items-center text-center gap-2">
+                    <span className="absolute right-2 top-2 font-display text-[46px] font-extrabold leading-none text-white/5">
+                      {p.rank}
+                    </span>
+                    <div className={`flex min-h-[90px] flex-col items-center justify-center gap-2 rounded-lg border p-2 text-center ${bestIndexes.includes(selected.findIndex((s) => s.id === p.id)) ? "border-[rgba(56,160,71,0.22)]" : "border-border"}`}>
                       <div
-                        className="flex h-14 w-14 items-center justify-center rounded-full border-2 text-lg font-bold text-foreground"
+                        className="flex h-12 w-12 items-center justify-center rounded-full border-2 text-base font-bold text-foreground"
                         style={{
-                          borderColor: p.accentColor,
-                          backgroundColor: `${p.accentColor}26`,
+                          borderColor: "rgba(56,160,71,0.22)",
+                          backgroundColor: "rgba(45,122,58,0.15)",
                         }}
                       >
                         {playerInitials(p.name)}
                       </div>
-                      <h2 className="text-sm font-bold text-foreground leading-tight line-clamp-2">{p.name}</h2>
-                      <p className="text-[11px] text-muted-foreground line-clamp-1">{p.club}</p>
-                      <span
-                        className="rounded-full px-2.5 py-1 font-mono text-xs font-bold"
-                        style={{
-                          color: p.accentColor,
-                          border: `1px solid ${p.accentColor}`,
-                          backgroundColor: "rgba(0,0,0,0.35)",
-                        }}
-                      >
+                      <h2 className="line-clamp-2 text-sm font-bold leading-tight text-foreground">{p.name}</h2>
+                      <span className="rounded-full border border-[rgba(56,160,71,0.22)] px-2 py-0.5 font-display text-xs text-[#38A047]">
                         CMV {formatScore(p.cmvScore)}
                       </span>
                     </div>
                   </div>
                 ))}
 
-                {/* Gauges row label */}
-                <div className="px-3 py-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground border-b border-border flex items-end">
-                  Subscores
+                <div className="section-title flex items-end border-b border-border px-3 py-3">
+                  Core Scores
                 </div>
-                {selected.map((p) => (
-                  <div
-                    key={`g-${p.id}`}
-                    className="border-b border-l border-border px-2 py-3 flex flex-wrap justify-center gap-1"
-                  >
-                    {SUB_ROWS.map((row) => (
-                      <ArcGauge
-                        key={row.key}
-                        value={p[row.key]}
-                        size={36}
-                        strokeWidth={3}
-                        color={row.color}
-                        label={row.abbr}
-                        showLabel
-                      />
-                    ))}
+                <div className="border-b border-l border-border px-3 py-2.5 text-center text-xs text-[#7A9490]">CMV + OPP + Breakdown</div>
+                {selected.slice(1).map((_, i) => (
+                  <div key={`core-${i}`} className="border-b border-l border-border px-3 py-2.5 text-center text-xs text-[#7A9490]">
+                    Weighted winners highlighted
                   </div>
                 ))}
 
-                {/* CMV row */}
-                <div className="px-3 py-4 text-sm font-semibold text-foreground border-b border-border bg-background/20">
+                <div className="border-b border-border bg-background/20 px-3 py-4 text-sm font-semibold text-foreground">
                   CMV Score
                 </div>
                 {selected.map((p, i) => (
                   <div
                     key={`cmv-${p.id}`}
-                    className={`border-b border-l border-border px-3 py-4 text-center ${
-                      cmvMax.has(i) ? "font-bold" : ""
-                    }`}
-                    style={{
-                      color: cmvMax.has(i) ? p.accentColor : undefined,
-                    }}
+                    className={`border-b border-l border-border px-3 py-3 ${cmvMax.has(i) ? "bg-[rgba(45,122,58,0.1)]" : ""}`}
+                    style={cmvMax.has(i) ? { borderColor: "rgba(56,160,71,0.22)" } : undefined}
                   >
-                    <span
-                      className="text-2xl lg:text-3xl font-bold tabular-nums"
-                      style={{ color: cmvMax.has(i) ? p.accentColor : "#7C6FFF" }}
-                    >
-                      {formatScore(p.cmvScore)}
-                    </span>
+                    <CompareCell value={p.cmvScore} max={100} winner={cmvMax.has(i)} />
                   </div>
                 ))}
 
-                {/* Opportunity Score */}
-                <div className="px-3 py-3 text-sm font-semibold text-foreground border-b border-border bg-background/20">
+                <div className="border-b border-border bg-background/20 px-3 py-3 text-sm font-semibold text-foreground">
                   Opportunity Score
                 </div>
                 {selected.map((p, i) => (
                   <div
                     key={`opp-${p.id}`}
-                    className={`border-b border-l border-border px-3 py-4 text-center ${
-                      oppMax.has(i) ? "font-bold" : ""
-                    }`}
+                    className={`border-b border-l border-border px-3 py-3 ${oppMax.has(i) ? "bg-[rgba(45,122,58,0.1)]" : ""}`}
+                    style={oppMax.has(i) ? { borderColor: "rgba(56,160,71,0.22)" } : undefined}
                   >
-                    <span
-                      className="text-xl lg:text-2xl font-bold tabular-nums"
-                      style={{ color: oppMax.has(i) ? "#00E5A0" : "rgba(255,255,255,0.85)" }}
-                    >
-                      {formatScore(p.opportunityScore)}
-                    </span>
+                    <CompareCell value={p.opportunityScore} max={100} winner={oppMax.has(i)} />
                   </div>
                 ))}
 
                 {SUB_ROWS.map((row, ri) => (
-                  <Fragment key={row.key}>
-                    <div className="px-3 py-3 text-sm text-muted-foreground border-b border-border flex items-center gap-2">
-                      <span
-                        className="h-2 w-2 rounded-full shrink-0"
-                        style={{ backgroundColor: row.color }}
-                      />
+                  <div key={row.key} className="contents">
+                    <div className="flex items-center gap-2 border-b border-border px-3 py-3 text-sm text-muted-foreground">
+                      <span className="h-2 w-2 shrink-0 rounded-full" style={{ backgroundColor: row.color }} />
                       {row.label}
                     </div>
                     {selected.map((p, ci) => {
@@ -333,20 +303,17 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                       return (
                         <div
                           key={`c-${p.id}-${row.key}`}
-                          className={`border-b border-l border-border px-3 py-3 text-center text-sm tabular-nums ${
-                            hi ? "font-bold" : "text-foreground"
-                          }`}
-                          style={{ color: hi ? row.color : undefined }}
+                          className={`border-b border-l border-border px-3 py-3 ${hi ? "bg-[rgba(45,122,58,0.1)]" : ""}`}
+                          style={hi ? { borderColor: "rgba(56,160,71,0.22)" } : undefined}
                         >
-                          {formatScore(val)}
+                          <CompareCell value={val} max={100} winner={!!hi} />
                         </div>
                       );
                     })}
-                  </Fragment>
+                  </div>
                 ))}
 
-                {/* Position */}
-                <div className="px-3 py-3 text-sm text-muted-foreground border-b border-border">Position</div>
+                <div className="border-b border-border px-3 py-3 text-sm text-muted-foreground">Position</div>
                 {selected.map((p) => (
                   <div
                     key={`pos-${p.id}`}
@@ -356,8 +323,7 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                   </div>
                 ))}
 
-                {/* Club */}
-                <div className="px-3 py-3 text-sm text-muted-foreground border-b border-border">Club</div>
+                <div className="border-b border-border px-3 py-3 text-sm text-muted-foreground">Club</div>
                 {selected.map((p) => (
                   <div
                     key={`club-${p.id}`}
@@ -367,7 +333,6 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
                   </div>
                 ))}
 
-                {/* League */}
                 <div className="px-3 py-3 text-sm text-muted-foreground">League</div>
                 {selected.map((p) => (
                   <div
@@ -380,8 +345,29 @@ export function ComparePageClient({ initialPlayers, preselectId }: Props) {
               </div>
             </div>
           )}
+
+          {selected.length >= 2 ? (
+            <section className="mt-6 rounded-[10px] border border-[rgba(56,160,71,0.22)] bg-card p-5">
+              <p className="section-title mb-2">Analysis · Brand recommendation</p>
+              <p className="text-sm text-[#C8D8D4]">{verdictText}</p>
+            </section>
+          ) : null}
         </div>
       </main>
     </div>
   );
+}
+
+function CompareCell({ value, max, winner }: { value: number; max: number; winner: boolean }) {
+  const pct = Math.min(100, Math.max(0, (value / max) * 100))
+  return (
+    <div className="space-y-1">
+      <p className={`font-display text-center text-lg font-semibold tabular-nums ${winner ? "text-[#38A047]" : "text-foreground"}`}>
+        {formatScore(value)}
+      </p>
+      <div className="h-[3px] overflow-hidden rounded-full bg-[#2E3D38]">
+        <div className={`h-full rounded-full ${winner ? "bg-[#38A047]" : "bg-[#2E3D38]"}`} style={{ width: `${pct}%` }} />
+      </div>
+    </div>
+  )
 }

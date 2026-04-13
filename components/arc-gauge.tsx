@@ -2,12 +2,12 @@
 
 // Subscore colors
 export const subscoreColors = {
-  sports: "#7C6FFF",
-  social: "#00E5A0",
-  commercial: "#FFB547",
-  brandFit: "#4FC3F7",
-  momentum: "#FF6B9D",
-  adjustments: "#69F0AE",
+  sports: "#38A047",
+  social: "#7A9490",
+  commercial: "#C8D8D4",
+  brandFit: "#4A5E58",
+  momentum: "#2D9E50",
+  adjustments: "#2D7A3A",
 } as const
 
 export type SubscoreType = keyof typeof subscoreColors
@@ -31,33 +31,34 @@ export function ArcGauge({
   label,
   showLabel = true 
 }: ArcGaugeProps) {
-  const radius = (size - strokeWidth) / 2
-  const center = size / 2
-  
+  const radius = parseFloat((((size - strokeWidth) / 2).toFixed(4)))
+  const center = parseFloat((size / 2).toFixed(4))
+
   // Arc from -135° to +135° (270° total sweep)
   const startAngle = -135
   const endAngle = 135
   const totalSweep = endAngle - startAngle
-  
-  // Calculate the arc path
+
+  // Calculate the arc path (round all floats to avoid SSR/client hydration mismatches)
   const polarToCartesian = (cx: number, cy: number, r: number, angleInDegrees: number) => {
     const angleInRadians = (angleInDegrees - 90) * Math.PI / 180
     return {
-      x: cx + r * Math.cos(angleInRadians),
-      y: cy + r * Math.sin(angleInRadians)
+      x: parseFloat((cx + r * Math.cos(angleInRadians)).toFixed(4)),
+      y: parseFloat((cy + r * Math.sin(angleInRadians)).toFixed(4)),
     }
   }
-  
+
   const describeArc = (cx: number, cy: number, r: number, startAngleDeg: number, endAngleDeg: number) => {
     const start = polarToCartesian(cx, cy, r, endAngleDeg)
     const end = polarToCartesian(cx, cy, r, startAngleDeg)
     const largeArcFlag = endAngleDeg - startAngleDeg <= 180 ? "0" : "1"
-    return `M ${start.x} ${start.y} A ${r} ${r} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
+    const rr = parseFloat(r.toFixed(4))
+    return `M ${start.x} ${start.y} A ${rr} ${rr} 0 ${largeArcFlag} 0 ${end.x} ${end.y}`
   }
-  
+
   const percentage = Math.min(value / max, 1)
-  const filledAngle = startAngle + (totalSweep * percentage)
-  
+  const filledAngle = parseFloat((startAngle + totalSweep * percentage).toFixed(4))
+
   const backgroundPath = describeArc(center, center, radius, startAngle, endAngle)
   const filledPath = describeArc(center, center, radius, startAngle, filledAngle)
   

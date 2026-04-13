@@ -26,7 +26,7 @@ function MiniSparkline({ data }: { data: number[] }) {
       <polyline
         points={points}
         fill="none"
-        stroke="#7C6FFF"
+        stroke="#38A047"
         strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
@@ -40,10 +40,10 @@ function ScoreBar({ value, max = 100, bold = false }: { value: number; max?: num
   
   return (
     <div className="flex items-center gap-2">
-      <span className={`w-8 ${bold ? "text-base font-bold text-foreground" : "text-sm text-foreground"}`}>{value}</span>
+      <span className={`w-8 ${bold ? "font-display text-base font-bold text-[#38A047]" : "text-sm text-foreground"}`}>{value}</span>
       <div className="w-16 h-1.5 bg-muted rounded-full overflow-hidden">
         <div
-          className="h-full bg-[#7C6FFF] rounded-full transition-all duration-300"
+          className="h-full rounded-full bg-[#38A047] transition-all duration-300"
           style={{ width: `${percentage}%` }}
         />
       </div>
@@ -88,7 +88,7 @@ function WeeklyChange({ change }: { change: number }) {
 
   const isPositive = change > 0
   const Icon = isPositive ? TrendingUp : TrendingDown
-  const colorClass = isPositive ? "text-[#00E5A0]" : "text-[#FF4D6A]"
+  const colorClass = isPositive ? "text-[#2D9E50]" : "text-[#D94F4F]"
 
   return (
     <div className={`flex items-center gap-1 ${colorClass}`}>
@@ -146,9 +146,9 @@ export function RankingTable({ players }: RankingTableProps) {
           {players.map((player, index) => (
             <tr
               key={player.id}
-              className={`border-b border-border transition-all hover:bg-[#7C6FFF]/5 group cursor-pointer relative ${
+              className={`group relative cursor-pointer border-b border-border transition-all hover:bg-[rgba(45,122,58,0.04)] ${
                 index % 2 === 0 ? "bg-transparent" : "bg-muted/30"
-              } hover:border-l-[3px] hover:border-l-[#7C6FFF]`}
+              } hover:border-l-[3px] hover:border-l-[#2D7A3A]`}
             >
               <td className="py-5 px-4">
                 <Link href={`/player/${player.id}`} className="block">
@@ -159,11 +159,11 @@ export function RankingTable({ players }: RankingTableProps) {
               </td>
               <td className="py-5 px-4">
                 <Link href={`/player/${player.id}`} className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#7C6FFF]/30 to-[#00E5A0]/30 flex items-center justify-center text-xs font-medium text-foreground shrink-0">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-[#2D7A3A]/30 to-[#38A047]/30 text-xs font-medium text-foreground">
                     {player.name.split(' ').map(n => n[0]).join('')}
                   </div>
                   <div>
-                    <p className="text-sm font-medium text-foreground group-hover:text-[#7C6FFF] transition-colors">
+                    <p className="text-sm font-medium text-foreground transition-colors group-hover:text-[#38A047]">
                       {player.name}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -16,13 +16,24 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-20 bg-sidebar flex flex-col items-center py-4 border-r border-border z-50">
+    <aside className="fixed left-0 top-0 z-50 flex h-screen w-20 flex-col items-center border-r border-border bg-sidebar py-4">
       {/* Logo */}
-      <Link href="/" className="mb-8 group flex flex-col items-center gap-1">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#7C6FFF] to-[#5B4FD9] flex items-center justify-center">
-          <span className="text-white font-bold text-lg">S</span>
-        </div>
-        <span className="text-[9px] font-medium text-muted-foreground tracking-wider uppercase">Scope</span>
+      <Link href="/" className="mb-8 group flex flex-col items-center gap-0.5">
+        <svg viewBox="0 0 44 44" width={32} height={32} fill="none" aria-hidden className="shrink-0">
+          <circle cx="22" cy="22" r="18" stroke="#2D7A3A" strokeWidth={1.5} />
+          <circle cx="22" cy="22" r="10" stroke="#38A047" strokeWidth={1.5} />
+          <circle cx="22" cy="22" r="3" fill="#38A047" />
+          <line x1="4" y1="22" x2="12" y2="22" stroke="#2D7A3A" strokeWidth={1.5} strokeLinecap="round" />
+          <line x1="32" y1="22" x2="40" y2="22" stroke="#2D7A3A" strokeWidth={1.5} strokeLinecap="round" />
+          <line x1="22" y1="4" x2="22" y2="12" stroke="#2D7A3A" strokeWidth={1.5} strokeLinecap="round" />
+          <line x1="22" y1="32" x2="22" y2="40" stroke="#2D7A3A" strokeWidth={1.5} strokeLinecap="round" />
+        </svg>
+        <span
+          className="font-display uppercase"
+          style={{ fontSize: "8px", color: "#2E3D38", letterSpacing: "0.15em" }}
+        >
+          SCOPE
+        </span>
       </Link>
 
       {/* Navigation */}
@@ -41,18 +52,18 @@ export function Sidebar() {
               <div
                 className={`w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200 ${
                   isActive
-                    ? "bg-[#7C6FFF]/20 text-[#7C6FFF]"
-                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                    ? "bg-[rgba(45,122,58,0.2)] text-[#38A047]"
+                    : "text-muted-foreground hover:bg-muted/40 hover:text-foreground"
                 }`}
               >
-                <Icon className="w-5 h-5" />
+                <Icon className="h-5 w-5" />
               </div>
               
               {/* Tooltip */}
-              <div className="absolute left-14 top-1/2 -translate-y-1/2 px-2 py-1 bg-card rounded text-xs font-medium text-foreground opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap border border-border">
+              <div className="pointer-events-none absolute left-14 top-1/2 whitespace-nowrap rounded border border-border bg-card px-2 py-1 text-xs font-medium text-foreground opacity-0 transition-opacity group-hover:opacity-100">
                 {item.label}
                 {item.soon && (
-                  <span className="ml-2 px-1.5 py-0.5 bg-[#FFB547]/20 text-[#FFB547] rounded text-[10px]">
+                  <span className="ml-2 rounded bg-[#38A047]/20 px-1.5 py-0.5 text-[10px] text-[#38A047]">
                     Soon
                   </span>
                 )}
@@ -64,10 +75,10 @@ export function Sidebar() {
 
       {/* Bottom section */}
       <div className="flex flex-col items-center gap-2">
-        <button className="w-10 h-10 rounded-lg flex items-center justify-center text-muted-foreground hover:text-foreground hover:bg-muted transition-colors">
+        <button className="flex h-10 w-10 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted/40 hover:text-foreground">
           <Settings className="w-5 h-5" />
         </button>
-        <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[#7C6FFF] to-[#00E5A0] flex items-center justify-center text-xs font-medium text-white">
+        <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-[#2D7A3A] to-[#38A047] text-xs font-medium text-white">
           JD
         </div>
       </div>

@@ -4,7 +4,14 @@ import { ArrowLeft, ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-reac
 import { Sidebar } from "@/components/sidebar"
 import { CMVHistoryChart } from "@/components/cmv-history-chart"
 import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
-import { formatScore } from "@/lib/format"
+import {
+  formatScore,
+  formatInteger,
+  formatFollowersCompact,
+  formatPercentValue,
+  formatFollowerGrowthAbsolute,
+  formatFormRating,
+} from "@/lib/format"
 
 interface PlayerPageProps {
   params: Promise<{ id: string }>
@@ -26,247 +33,14 @@ export async function generateMetadata({ params }: PlayerPageProps) {
 
 
 
-function ArcGauge({ score, color }: { score: number; color: string }) {
-  const radius = 28;
-  const cx = 40;
-  const cy = 40;
-  const totalArc = 201.06;
-  const filled = (score / 100) * totalArc;
-  const startAngle = -220;
-  const endAngle = 40;
-  const toRad = (deg: number) => (deg * Math.PI) / 180;
-  const x1 = cx + radius * Math.cos(toRad(startAngle));
-  const y1 = cy + radius * Math.sin(toRad(startAngle));
-  const x2 = cx + radius * Math.cos(toRad(endAngle));
-  const y2 = cy + radius * Math.sin(toRad(endAngle));
-
-  return (
-    <svg width="80" height="80" viewBox="0 0 80 80">
-      <path
-        d={`M ${x1} ${y1} A ${radius} ${radius} 0 1 1 ${x2} ${y2}`}
-        fill="none"
-        stroke="rgba(255,255,255,0.08)"
-        strokeWidth="5"
-        strokeLinecap="round"
-      />
-      <path
-        d={`M ${x1} ${y1} A ${radius} ${radius} 0 1 1 ${x2} ${y2}`}
-        fill="none"
-        stroke={color}
-        strokeWidth="5"
-        strokeLinecap="round"
-        strokeDasharray={`${filled} ${totalArc}`}
-      />
-      <text
-        x="40"
-        y="44"
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={color}
-        fontSize="16"
-        fontWeight="500"
-      >
-        {score}
-      </text>
-    </svg>
-  );
-}
-
-function CMVBreakdown({ player }: { player: { sportsScore: number; socialScore: number; commercialScore: number; brandFitScore: number; momentumScore: number; adjustmentsScore: number } }) {
-  const gauges = [
-    { label: "Sports Value", weight: "20%", score: player.sportsScore, color: "#7C6FFF" },
-    { label: "Social & Marketing", weight: "35%", score: player.socialScore, color: "#00E5A0" },
-    { label: "Commercial History", weight: "15%", score: player.commercialScore, color: "#FFB547" },
-    { label: "Brand Fit", weight: "10%", score: player.brandFitScore, color: "#4FC3F7" },
-    { label: "Momentum", weight: "10%", score: player.momentumScore, color: "#FF6B9D" },
-    { label: "Adjustments", weight: "10%", score: player.adjustmentsScore, color: "#69F0AE" },
-  ];
-
-  return (
-    <div style={{ marginBottom: "32px" }}>
-      <p style={{ fontSize: "13px", color: "rgba(255,255,255,0.4)", marginBottom: "16px" }}>
-        CMV Breakdown
-      </p>
-      <div style={{
-        display: "grid",
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gap: "12px"
-      }}>
-        {gauges.map((g) => (
-          <div key={g.label} style={{
-            background: "#0C0C18",
-            borderRadius: "10px",
-            borderLeft: `3px solid ${g.color}`,
-            padding: "20px",
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-            gap: "8px"
-          }}>
-            <ArcGauge score={g.score} color={g.color} />
-            <p style={{ fontSize: "12px", color: "rgba(255,255,255,0.5)", textAlign: "center" }}>
-              {g.label}
-            </p>
-            <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.2)" }}>
-              {g.weight}
-            </p>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function PlayerPhotoArea({ player }: { player: { photoGradient: string; accentColor: string; shirtNumber: number; name: string; club: string } }) {
-  return (
-    <div 
-      style={{
-        width: "280px",
-        height: "320px",
-        borderRadius: "12px",
-        overflow: "hidden",
-        position: "relative",
-        background: player.photoGradient,
-        flexShrink: 0,
-      }}
-    >
-      {/* Accent color top bar */}
-      <div 
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "4px",
-          backgroundColor: player.accentColor,
-        }}
-      />
-      
-      {/* Dot grid pattern top-right */}
-      <div 
-        style={{
-          position: "absolute",
-          top: "16px",
-          right: "16px",
-          display: "grid",
-          gridTemplateColumns: "repeat(3, 3px)",
-          gap: "10px",
-        }}
-      >
-        {[...Array(9)].map((_, i) => (
-          <div 
-            key={i}
-            style={{
-              width: "3px",
-              height: "3px",
-              borderRadius: "50%",
-              backgroundColor: player.accentColor,
-              opacity: 0.15,
-            }}
-          />
-        ))}
-      </div>
-      
-      {/* Shirt number watermark */}
-      <span 
-        style={{
-          position: "absolute",
-          top: "50%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          fontSize: "140px",
-          fontWeight: 900,
-          color: "white",
-          opacity: 0.06,
-          userSelect: "none",
-          lineHeight: 1,
-        }}
-      >
-        {player.shirtNumber}
-      </span>
-      
-      {/* Player initials circle */}
-      <div 
-        style={{
-          position: "absolute",
-          top: "55%",
-          left: "50%",
-          transform: "translate(-50%, -50%)",
-          width: "72px",
-          height: "72px",
-          borderRadius: "50%",
-          backgroundColor: `${player.accentColor}26`,
-          border: `2px solid ${player.accentColor}B3`,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span 
-          style={{
-            fontSize: "24px",
-            fontWeight: 700,
-            color: player.accentColor,
-          }}
-        >
-          {player.name.split(' ').map(n => n[0]).join('')}
-        </span>
-      </div>
-      
-      {/* Club logo badge */}
-      <div 
-        style={{
-          position: "absolute",
-          bottom: "12px",
-          left: "12px",
-          width: "36px",
-          height: "36px",
-          borderRadius: "8px",
-          backgroundColor: "rgba(0,0,0,0.6)",
-          border: "1px solid rgba(255,255,255,0.1)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <span 
-          style={{
-            fontSize: "14px",
-            fontWeight: 700,
-            color: player.accentColor,
-          }}
-        >
-          {player.club[0]}
-        </span>
-      </div>
-    </div>
-  );
-}
-
-function SocialMetricCard({ 
-  label, 
-  value, 
-  change,
-  status
-}: { 
-  label: string
-  value: string
-  change?: string
-  status?: string
-}) {
-  return (
-    <div className="bg-muted/50 rounded-[10px] p-4">
-      <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">{label}</p>
-      <p className="text-xl font-semibold text-foreground">{value}</p>
-      {change && (
-        <p className="text-xs text-[#00E5A0] mt-1">{change} this month</p>
-      )}
-      {status && (
-        <p className="text-xs text-muted-foreground mt-1">({status})</p>
-      )}
-    </div>
-  )
-}
+const breakdownItems = [
+  { key: "sportsScore", label: "Sports", weight: "20%", color: "#38A047" },
+  { key: "socialScore", label: "Social", weight: "35%", color: "#7A9490" },
+  { key: "commercialScore", label: "Commercial", weight: "15%", color: "#C8D8D4" },
+  { key: "brandFitScore", label: "Brand Fit", weight: "10%", color: "#4A5E58" },
+  { key: "momentumScore", label: "Momentum", weight: "10%", color: "#2D9E50" },
+  { key: "adjustmentsScore", label: "Adjustments", weight: "10%", color: "#2D7A3A" },
+] as const;
 
 export default async function PlayerPage({ params }: PlayerPageProps) {
   const { id } = await params
@@ -279,6 +53,17 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const player = mapPlayerProfileToV0Player(profile)
 
   const isPositiveChange = player.weeklyChange >= 0
+  const rankWatermark = profile.cmv_rank ?? player.rank
+  const initials = player.name.split(" ").map((n) => n[0]).join("")
+  const sports = profile.sports_metrics
+  const social = profile.social_metrics
+
+  const instagramFollowers = formatFollowersCompact(social?.instagram_followers)
+  const tiktokFollowers = formatFollowersCompact(social?.tiktok_followers)
+  const passAccuracyDisplay =
+    sports?.pass_accuracy != null && Number.isFinite(Number(sports.pass_accuracy))
+      ? `${formatInteger(Number(sports.pass_accuracy))}%`
+      : "—"
 
   return (
     <div className="min-h-screen bg-background">
@@ -286,178 +71,201 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
       
       <main className="ml-20 min-h-screen">
         <div className="p-6 lg:p-8">
-          {/* Back Link */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-            <Link
-              href="/"
-              className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors group"
-            >
-              <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-              <span className="text-sm">Back to Rankings</span>
-            </Link>
-            <Link
-              href={`/compare?with=${id}`}
-              className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground hover:bg-muted/50 hover:border-[#7C6FFF]/40 transition-colors"
-            >
-              <ArrowLeftRight className="w-4 h-4 text-[#7C6FFF]" />
-              Compare with another player
-            </Link>
-          </div>
-
-          {/* Player Header - 2 Column Layout */}
-          <div className="flex flex-col lg:flex-row gap-8 mb-8">
-            {/* Left Column - Photo Area */}
-            <div className="hidden lg:block">
-              <PlayerPhotoArea player={player} />
-            </div>
-            
-            {/* Right Column - Info & CMV */}
-            <div className="flex-1 flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div className="flex-1">
-                {/* Club & Position & Nationality & National Team */}
-                <div className="flex items-center gap-3 mb-4 text-muted-foreground text-sm flex-wrap">
-                  <span>{player.club}</span>
-                  <span className="text-border">·</span>
-                  <span>{player.position}</span>
-                  <span className="text-border">·</span>
-                  <span>{player.nationality} {player.flag}</span>
-                  <span className="text-border">·</span>
-                  {/* National Team Indicator */}
-                  <span 
-                    className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs"
-                    style={{ 
-                      backgroundColor: player.calledUp ? "rgba(0, 229, 160, 0.1)" : "rgba(255,255,255,0.05)",
-                      border: player.calledUp ? "1px solid rgba(0, 229, 160, 0.2)" : "1px solid rgba(255,255,255,0.08)"
-                    }}
-                  >
-                    {player.calledUp && (
-                      <span 
-                        style={{
-                          width: "6px",
-                          height: "6px",
-                          borderRadius: "50%",
-                          backgroundColor: "#00E5A0",
-                        }}
-                      />
-                    )}
-                    <span>{player.flag}</span>
-                    <span style={{ color: player.calledUp ? "#00E5A0" : "rgba(255,255,255,0.4)", fontSize: "11px" }}>
-                      {player.calledUp ? "Called up" : "INT"}
-                    </span>
+          <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(260px,280px)_1fr]">
+            <section className="relative h-[360px] min-w-[260px] w-full overflow-hidden rounded-[12px] border border-border" style={{ background: player.photoGradient }}>
+              <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04]" viewBox="0 0 100 100" preserveAspectRatio="none">
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <line key={`h-${i}`} x1="0" y1={i * 20} x2="100" y2={i * 20} stroke="white" strokeWidth="0.6" />
+                ))}
+                {Array.from({ length: 6 }).map((_, i) => (
+                  <line key={`v-${i}`} x1={i * 20} y1="0" x2={i * 20} y2="100" stroke="white" strokeWidth="0.6" />
+                ))}
+              </svg>
+              <svg className="pointer-events-none absolute inset-0 m-auto h-44 w-44 opacity-[0.06]" viewBox="0 0 100 100">
+                <circle cx="50" cy="26" r="8" fill="white" />
+                <rect x="43" y="35" width="14" height="26" rx="6" fill="white" />
+                <line x1="44" y1="46" x2="29" y2="54" stroke="white" strokeWidth="5" strokeLinecap="round" />
+                <line x1="56" y1="46" x2="71" y2="52" stroke="white" strokeWidth="5" strokeLinecap="round" />
+                <line x1="48" y1="62" x2="40" y2="81" stroke="white" strokeWidth="5" strokeLinecap="round" />
+                <line x1="52" y1="62" x2="67" y2="78" stroke="white" strokeWidth="5" strokeLinecap="round" />
+              </svg>
+              <span
+                className="pointer-events-none absolute bottom-2 right-3 font-display text-[180px] font-extrabold leading-none text-white"
+                style={{ opacity: 0.04 }}
+              >
+                {rankWatermark}
+              </span>
+              <Link href="/" className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full border border-border bg-black/35 px-3 py-1.5 text-xs text-[#C8D8D4]">
+                <ArrowLeft className="h-3.5 w-3.5" /> Rankings
+              </Link>
+              <div className="absolute right-3 top-3 flex flex-col items-end gap-2">
+                <span className="rounded-full border border-border bg-black/35 px-2.5 py-1 text-[11px] text-[#C8D8D4]">
+                  {player.flag} {player.nationality}
+                </span>
+                {player.calledUp ? (
+                  <span className="rounded-full border border-[#2D9E50]/30 bg-[#2D9E50]/15 px-2.5 py-1 text-[11px] text-[#2D9E50]">
+                    Called up
                   </span>
-                </div>
-
-                {/* Player Name */}
-                <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-foreground leading-none mb-3">
-                  {player.name}
-                </h1>
-                
-                {/* Age & Market Value */}
-                <div className="flex items-center gap-4 text-muted-foreground text-sm">
-                  <span>Age {player.age}</span>
-                  <span className="text-border">·</span>
-                  <span>Market Value {player.marketValue}</span>
-                </div>
+                ) : null}
               </div>
+              <div className="absolute left-1/2 top-1/2 flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#38A047] bg-[rgba(45,122,58,0.15)] text-2xl font-display font-bold text-[#E8F5EA]">
+                {initials}
+              </div>
+              <span className="absolute bottom-3 right-3 rounded-full border border-border bg-black/35 px-3 py-1 text-xs text-[#C8D8D4]">
+                {player.position}
+              </span>
+            </section>
 
-              {/* CMV + Opportunity (hero metrics) */}
-              <div className="flex flex-col sm:flex-row lg:flex-col xl:flex-row items-stretch sm:items-end lg:items-end xl:items-start gap-8 lg:gap-10 xl:gap-14 w-full lg:w-auto lg:max-w-none">
-                <div className="lg:text-right xl:text-right flex-1 min-w-0">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                    Commercial Market Value
-                  </p>
-                  <p 
-                    className="text-7xl sm:text-8xl md:text-[100px] lg:text-[120px] font-bold text-[#7C6FFF] leading-none" 
-                    style={{ textShadow: '0 0 80px rgba(124, 111, 255, 0.5), 0 0 120px rgba(124, 111, 255, 0.3)' }}
-                  >
-                    {player.cmvScore}
-                  </p>
-                  <div className={`flex items-center gap-1 mt-3 ${isPositiveChange ? 'text-[#00E5A0]' : 'text-[#FF4D6A]'} lg:justify-end`}>
-                    {player.weeklyChange !== 0 && (
-                      isPositiveChange ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />
-                    )}
-                    <span className="text-sm font-medium">
-                      {isPositiveChange ? '+' : ''}{player.weeklyChange.toFixed(1)} vs last week
-                    </span>
+            <section className="flex min-h-[360px] flex-col justify-between gap-6">
+              <div className="space-y-5">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                  <div>
+                    <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[#38A047]">
+                      {player.club} · {player.league ?? "Football"}
+                    </p>
+                    <h1 className="font-display text-[38px] font-bold leading-none tracking-[-0.03em] text-white">
+                      {player.name}
+                    </h1>
+                    <div className="mt-4 flex flex-wrap gap-2">
+                      <span className="rounded-full border border-border px-3 py-1 text-xs text-[#7A9490]">Age {player.age || "—"}</span>
+                      <span className="rounded-full border border-border px-3 py-1 text-xs text-[#7A9490]">Market Value {player.marketValue}</span>
+                      <span className="rounded-full border border-[#38A047]/40 bg-[#38A047]/10 px-3 py-1 text-xs text-[#38A047]">Top 100 CMV</span>
+                    </div>
                   </div>
+                  <Link
+                    href={`/compare?with=${id}`}
+                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[rgba(45,122,58,0.04)] hover:border-[rgba(56,160,71,0.22)]"
+                  >
+                    <ArrowLeftRight className="h-4 w-4 text-[#38A047]" />
+                    Compare with another player
+                  </Link>
                 </div>
 
-                <div className="lg:text-right xl:text-left flex-1 min-w-0 border-t border-border/60 pt-6 sm:border-t-0 sm:pt-0 lg:border-t-0 xl:border-l xl:border-border/60 xl:pl-10 xl:pt-0">
-                  <p className="text-xs text-muted-foreground uppercase tracking-wider mb-2">
-                    Opportunity
-                  </p>
-                  <div className="flex items-center gap-3 lg:justify-end xl:justify-start">
-                    <span
-                      className="h-2.5 w-2.5 shrink-0 rounded-full ring-2 ring-white/10"
-                      style={{ backgroundColor: opportunityScoreAccent(player.opportunityScore) }}
-                      aria-hidden
-                    />
-                    <p
-                      className="text-5xl sm:text-6xl md:text-7xl font-bold leading-none tabular-nums"
-                      style={{ color: opportunityScoreAccent(player.opportunityScore) }}
-                    >
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
+                  <div className="rounded-[10px] border border-border bg-card p-5">
+                    <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.16em] text-[#38A047]">Commercial Market Value</p>
+                    <p className="font-display text-[72px] font-extrabold leading-none text-[#38A047]">
+                      {player.cmvScore}
+                    </p>
+                    <div className={`mt-2 flex items-center gap-1 text-sm ${isPositiveChange ? "text-[#2D9E50]" : "text-[#D94F4F]"}`}>
+                      {player.weeklyChange !== 0 && (isPositiveChange ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />)}
+                      <span>
+                        {isPositiveChange ? "+" : ""}
+                        {player.weeklyChange.toFixed(1)} vs last week
+                      </span>
+                    </div>
+                  </div>
+                  <div className="rounded-[10px] border border-[rgba(56,160,71,0.22)] bg-card p-5">
+                    <p className="section-title mb-2">Opportunity Score</p>
+                    <p className="font-display text-[32px] font-bold" style={{ color: opportunityScoreAccent(player.opportunityScore) }}>
                       {player.opportunityScore}
                     </p>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-3 max-w-[240px] lg:ml-auto xl:ml-0 leading-relaxed">
-                    How attractive this player is for a brand deal right now
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <div className="rounded-[10px] border border-border bg-card p-4">
+                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.goals ?? null)}</p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Goals</p>
+                </div>
+                <div className="rounded-[10px] border border-border bg-card p-4">
+                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.assists ?? null)}</p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Assists</p>
+                </div>
+                <div className="rounded-[10px] border border-border bg-card p-4">
+                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.matches_played ?? null)}</p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Apps</p>
+                </div>
+                <div className="rounded-[10px] border border-border bg-card p-4">
+                  <p className="font-display text-[22px] font-bold text-white">{formatInteger(sports?.minutes_played ?? null)}</p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.14em] text-[#4A5E58]">Minutes</p>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <section className="mb-8">
+            <p className="section-title mb-3">CMV Breakdown</p>
+            <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+              {breakdownItems.map((item) => (
+                <div
+                  key={item.key}
+                  className="rounded-[10px] border border-border bg-card p-4"
+                  style={{ borderTop: `3px solid ${item.color}` }}
+                >
+                  <p className="font-display text-[28px] font-bold leading-none" style={{ color: item.color }}>
+                    {formatScore(player[item.key])}
                   </p>
+                  <p className="mt-2 text-[10px] uppercase tracking-[0.14em] text-[#4A5E58]">{item.label}</p>
+                  <p className="mt-1 text-[9px] uppercase tracking-[0.12em] text-[#2E3D38]">Weight {item.weight}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div className="rounded-[10px] border border-border bg-card p-5">
+              <p className="section-title mb-4">Social</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Instagram</p>
+                  <p className="font-display text-xl text-white">{instagramFollowers}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">TikTok</p>
+                  <p className="font-display text-xl text-white">{tiktokFollowers}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Engagement</p>
+                  <p className="font-display text-xl text-white">{formatPercentValue(social?.engagement_rate)}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Growth 30d</p>
+                  <p className="font-display text-xl text-white">{formatFollowerGrowthAbsolute(social?.followers_growth_30d)}</p>
                 </div>
               </div>
             </div>
-          </div>
-
-          {/* CMV Breakdown */}
-          <CMVBreakdown player={player} />
-
-          {/* Social Stats */}
-          <div className="mb-8">
-            <h2 className="text-sm font-medium text-foreground mb-4">Social Stats</h2>
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-              <SocialMetricCard 
-                label="Instagram Followers" 
-                value={player.instagram} 
-                change={player.instagramGrowth}
-              />
-              <SocialMetricCard 
-                label="TikTok Followers" 
-                value={player.tiktok} 
-                change={player.tiktokGrowth}
-              />
-              <SocialMetricCard 
-                label="Engagement Rate" 
-                value={player.engagementRate} 
-                status={player.engagementStatus}
-              />
-              <SocialMetricCard 
-                label="Follower Growth 30d" 
-                value={player.followerGrowth30d} 
-              />
+            <div className="rounded-[10px] border border-border bg-card p-5">
+              <p className="section-title mb-4">Sports</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Minutes</p>
+                  <p className="font-display text-xl text-white">{formatInteger(sports?.minutes_played ?? null)}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Form rating</p>
+                  <p className="font-display text-xl text-white">{formatFormRating(sports?.rating ?? null)}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Pass Accuracy</p>
+                  <p className="font-display text-xl text-white">{passAccuracyDisplay}</p>
+                </div>
+                <div className="rounded-lg border border-border p-3">
+                  <p className="text-xs text-[#7A9490]">Matches</p>
+                  <p className="font-display text-xl text-white">{formatInteger(sports?.matches_played ?? null)}</p>
+                </div>
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* CMV History Chart */}
-          <div className="mb-8">
-            <h2 className="text-sm font-medium text-foreground mb-4">CMV History (90 Days)</h2>
-            <div className="bg-card rounded-[10px] border border-border p-6">
+          <section className="mb-8">
+            <p className="section-title mb-3">CMV History (90 Days)</p>
+            <div className="rounded-[10px] border border-border bg-card p-6">
               <CMVHistoryChart data={player.cmvHistory} />
             </div>
-          </div>
+          </section>
 
-          {/* Brand Verticals */}
-          <div className="mb-8">
-            <h2 className="text-sm font-medium text-foreground mb-4">Brand Verticals</h2>
-            <div className="flex flex-wrap gap-3">
-              {player.brandVerticals.map((vertical) => (
-                <span 
-                  key={vertical}
-                  className="px-4 py-2 bg-[#7C6FFF]/10 border border-[#7C6FFF]/20 rounded-lg text-sm text-foreground hover:bg-[#7C6FFF]/15 hover:border-[#7C6FFF]/40 transition-colors cursor-default"
-                >
+          <section className="mb-8">
+            <p className="section-title mb-3">Brand Verticals</p>
+            <div className="flex flex-wrap gap-2">
+              {(player.brandVerticals.length > 0 ? player.brandVerticals : ["Performance", "Lifestyle", "Tech"]).map((vertical) => (
+                <span key={vertical} className="rounded-full border border-[#38A047]/30 bg-[#38A047]/15 px-3 py-1.5 text-xs text-[#E8F5EA]">
                   {vertical}
                 </span>
               ))}
             </div>
-          </div>
+          </section>
         </div>
       </main>
     </div>

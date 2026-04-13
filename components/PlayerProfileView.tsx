@@ -17,7 +17,7 @@ type Props = {
 
 function SectionTitle({ children }: { children: ReactNode }) {
   return (
-    <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-zinc-400">
+    <h2 className="section-title">
       {children}
     </h2>
   );
@@ -33,12 +33,12 @@ function StatCard({
   sub?: string;
 }) {
   return (
-    <div className="rounded-2xl border border-white/[0.1] bg-white/[0.04] px-6 py-6 shadow-panel-inset sm:px-7 sm:py-7">
-      <p className="text-base font-medium text-zinc-400">{label}</p>
-      <p className="mt-3 font-mono text-2xl font-semibold tabular-nums tracking-tight text-white sm:text-3xl">
+    <div className="rounded-2xl border border-border bg-card/60 px-6 py-6 shadow-panel-inset sm:px-7 sm:py-7">
+      <p className="text-base font-medium text-[#7A9490]">{label}</p>
+      <p className="font-display mt-3 text-2xl font-semibold tabular-nums tracking-tight text-white sm:text-3xl">
         {value}
       </p>
-      {sub ? <p className="mt-2 text-sm text-zinc-500">{sub}</p> : null}
+      {sub ? <p className="mt-2 text-sm text-[#4A5E58]">{sub}</p> : null}
     </div>
   );
 }

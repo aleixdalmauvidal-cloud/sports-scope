@@ -6,8 +6,8 @@ import { ChevronDown, ChevronUp, TrendingDown, TrendingUp } from "lucide-react";
 import type { Player } from "@/lib/players";
 import { formatScore } from "@/lib/format";
 
-const CARD_BG = "#10101C";
-const BORDER = "rgba(255,255,255,0.07)";
+const CARD_BG = "#1C2420";
+const BORDER = "rgba(56,160,71,0.10)";
 
 type MoverRow = {
   id: string;
@@ -45,7 +45,7 @@ const DEMO_RISERS: MoverRow[] = [
     club: "Barcelona",
     cmvScore: 86,
     weeklyChange: 3.4,
-    accentColor: "#00E5A0",
+    accentColor: "#38A047",
     isDemo: true,
   },
   {
@@ -54,7 +54,7 @@ const DEMO_RISERS: MoverRow[] = [
     club: "Real Madrid",
     cmvScore: 88,
     weeklyChange: 1.2,
-    accentColor: "#7C6FFF",
+    accentColor: "#2D7A3A",
     isDemo: true,
   },
   {
@@ -63,7 +63,7 @@ const DEMO_RISERS: MoverRow[] = [
     club: "Arsenal",
     cmvScore: 84,
     weeklyChange: 0.8,
-    accentColor: "#FFB547",
+    accentColor: "#C8D8D4",
     isDemo: true,
   },
 ];
@@ -75,7 +75,7 @@ const DEMO_FALLERS: MoverRow[] = [
     club: "Liverpool",
     cmvScore: 87,
     weeklyChange: -1.1,
-    accentColor: "#00E5A0",
+    accentColor: "#38A047",
     isDemo: true,
   },
   {
@@ -84,7 +84,7 @@ const DEMO_FALLERS: MoverRow[] = [
     club: "Manchester City",
     cmvScore: 91,
     weeklyChange: -0.5,
-    accentColor: "#4FC3F7",
+    accentColor: "#7A9490",
     isDemo: true,
   },
   {
@@ -93,7 +93,7 @@ const DEMO_FALLERS: MoverRow[] = [
     club: "Manchester City",
     cmvScore: 82,
     weeklyChange: -0.3,
-    accentColor: "#FF6B9D",
+    accentColor: "#D94F4F",
     isDemo: true,
   },
 ];
@@ -131,13 +131,13 @@ export function WeeklyMovers({ players }: Props) {
       className="rounded-[10px] border overflow-hidden mb-6"
       style={{ backgroundColor: CARD_BG, borderColor: BORDER }}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-4 py-3 border-b border-white/[0.07]">
+      <div className="flex flex-col gap-3 border-b border-[#38A047]/10 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-base font-bold text-foreground">Weekly Movers</h2>
           <p className="text-xs text-muted-foreground mt-0.5">
             Biggest CMV changes in the last 7 days
             {usingDemo ? (
-              <span className="ml-2 text-[#FFB547]/90">· sample data</span>
+              <span className="ml-2 text-[#7A9490]">· sample data</span>
             ) : null}
           </p>
         </div>
@@ -161,18 +161,18 @@ export function WeeklyMovers({ players }: Props) {
       </div>
 
       {expanded ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-0 md:divide-x divide-white/[0.07]">
+        <div className="grid grid-cols-1 gap-0 divide-[#38A047]/10 md:grid-cols-2 md:divide-x">
           <MoverColumn
             title="📈 Risers"
             rows={risers}
             direction="up"
-            borderAccent="rgba(0, 229, 160, 0.45)"
+            borderAccent="#2D9E50"
           />
           <MoverColumn
             title="📉 Fallers"
             rows={fallers}
             direction="down"
-            borderAccent="rgba(255, 77, 106, 0.45)"
+            borderAccent="#D94F4F"
           />
         </div>
       ) : null}
@@ -192,18 +192,18 @@ function MoverColumn({
   borderAccent: string;
 }) {
   const Icon = direction === "up" ? TrendingUp : TrendingDown;
-  const colorClass = direction === "up" ? "text-[#00E5A0]" : "text-[#FF4D6A]";
+  const colorClass = direction === "up" ? "text-[#2D9E50]" : "text-[#D94F4F]";
 
   return (
     <div className="p-3 sm:p-4" style={{ borderLeftWidth: 3, borderLeftStyle: "solid", borderLeftColor: borderAccent }}>
-      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">{title}</p>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">{title}</p>
       <div className="space-y-0">
         {rows.length === 0 ? (
           <p className="text-xs text-muted-foreground py-3">No data this week.</p>
         ) : (
           rows.map((row, i) => {
             const inner = (
-              <div className="flex items-center gap-2.5 py-2 border-b border-white/[0.06] last:border-0">
+              <div className="flex items-center gap-2.5 border-b border-[#38A047]/10 py-2 last:border-0">
                 <span className="w-6 shrink-0 text-center text-[10px] font-bold tabular-nums text-muted-foreground">
                   #{i + 1}
                 </span>
@@ -240,7 +240,7 @@ function MoverColumn({
               return <div key={row.id}>{inner}</div>;
             }
             return (
-              <Link key={row.id} href={`/player/${row.id}`} className="block rounded-md -mx-1 px-1 hover:bg-white/[0.04] transition-colors">
+              <Link key={row.id} href={`/player/${row.id}`} className="-mx-1 block rounded-md px-1 transition-colors hover:bg-[rgba(45,122,58,0.04)]">
                 {inner}
               </Link>
             );

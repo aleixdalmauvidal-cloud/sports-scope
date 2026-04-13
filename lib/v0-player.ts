@@ -50,14 +50,14 @@ export interface Player {
 }
 
 const RANK_ACCENTS = [
-  "#7C6FFF",
-  "#00E5A0",
-  "#FFB547",
-  "#4FC3F7",
-  "#7C6FFF",
-  "#00E5A0",
-  "#FF4D6A",
-  "#888888",
+  "#2D7A3A",
+  "#38A047",
+  "#C8D8D4",
+  "#7A9490",
+  "#2D7A3A",
+  "#38A047",
+  "#D94F4F",
+  "#4A5E58",
 ] as const;
 
 function accentForRank(rank: number): string {
@@ -354,8 +354,8 @@ export function computeOpportunityScore(input: {
 
 /** Accent for OPP badges: high / mid / low. */
 export function opportunityScoreAccent(score: number): string {
-  if (score >= 80) return "#00E5A0";
-  if (score >= 60) return "#FFB547";
+  if (score >= 80) return "#2D9E50";
+  if (score >= 60) return "#38A047";
   return "rgba(255,255,255,0.55)";
 }
 
@@ -386,9 +386,9 @@ export function mapPlayerRowToV0Player(row: PlayerRow, rank: number): Player {
     position: row.position,
     age: row.age ?? 0,
     marketValue: "—",
-    bgColor: "#0a0a1a",
-    bgGradient: `radial-gradient(circle at 50% 30%, ${accent}66 0%, #0A0A1A 100%)`,
-    photoGradient: `linear-gradient(180deg, ${accent}55 0%, #0A0A1A 100%)`,
+    bgColor: "#0D1110",
+    bgGradient: `radial-gradient(circle at 50% 30%, ${accent}66 0%, #0D1110 100%)`,
+    photoGradient: `linear-gradient(180deg, ${accent}55 0%, #0D1110 100%)`,
     accentColor: accent,
     shirtNumber: rank,
     calledUp: false,

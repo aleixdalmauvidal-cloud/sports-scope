@@ -11,7 +11,20 @@ import {
   type PositionFilterValue,
   type SortOptionValue,
 } from "@/lib/rankings-filters";
-import { ChevronDown, RotateCcw } from "lucide-react";
+import { ChevronDown } from "lucide-react";
+import { ViewToggle } from "@/components/view-toggle";
+
+const labelClass =
+  "shrink-0 text-[9px] font-semibold uppercase tracking-[0.12em] text-[#2E3D38] mr-1.5";
+
+function Separator() {
+  return (
+    <div
+      className="h-4 w-px shrink-0 self-center bg-[rgba(56,160,71,0.15)]"
+      aria-hidden
+    />
+  );
+}
 
 function Pill({
   active,
@@ -26,10 +39,10 @@ function Pill({
     <button
       type="button"
       onClick={onClick}
-      className={`shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium transition-all sm:text-sm ${
+      className={`inline-flex h-[26px] shrink-0 items-center justify-center rounded-[20px] px-[11px] text-[11px] font-medium transition-colors ${
         active
-          ? "bg-[#7C6FFF] text-white shadow-[0_0_12px_-4px_rgba(124,111,255,0.5)]"
-          : "bg-background/80 text-muted-foreground hover:bg-muted hover:text-foreground border border-border"
+          ? "border-0 bg-[#2D7A3A] text-white"
+          : "border border-[rgba(56,160,71,0.15)] bg-transparent text-[#4A5E58] hover:border-[rgba(56,160,71,0.25)] hover:text-[#7A9490]"
       }`}
     >
       {children}
@@ -38,6 +51,8 @@ function Pill({
 }
 
 interface Props {
+  view: "table" | "card";
+  onViewChange: (view: "table" | "card") => void;
   league: LeagueFilterValue;
   onLeagueChange: (v: LeagueFilterValue) => void;
   position: PositionFilterValue;
@@ -52,6 +67,8 @@ interface Props {
 }
 
 export function RankingsFilterBar({
+  view,
+  onViewChange,
   league,
   onLeagueChange,
   position,
@@ -65,87 +82,77 @@ export function RankingsFilterBar({
   onReset,
 }: Props) {
   return (
-    <div className="rounded-[10px] border border-border bg-card/80 p-4 space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted-foreground">
-          <span className="font-mono font-semibold tabular-nums text-foreground">{resultCount}</span>{" "}
+    <div className="overflow-hidden rounded-[10px] border-x border-t border-border bg-[#0D1110] px-6 py-2 [border-bottom:1px_solid_rgba(56,160,71,0.1)]">
+      <div className="flex items-center justify-between gap-4 border-b border-[rgba(56,160,71,0.1)] pb-2">
+        <p className="shrink-0 text-sm text-muted-foreground">
+          <span className="font-display font-semibold tabular-nums text-foreground">
+            {resultCount}
+          </span>{" "}
           {resultCount === 1 ? "player" : "players"} found
         </p>
-        {showReset ? (
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex items-center justify-center gap-2 rounded-lg border border-border bg-background px-3 py-2 text-xs font-medium text-muted-foreground hover:border-[#7C6FFF]/40 hover:text-foreground transition-colors self-start sm:self-auto"
-          >
-            <RotateCcw className="h-3.5 w-3.5" />
-            Reset filters
-          </button>
-        ) : null}
+        <ViewToggle view={view} onChange={onViewChange} />
       </div>
 
-      <div className="space-y-3">
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            League
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {LEAGUE_OPTIONS.map((opt) => (
-              <Pill key={opt} active={league === opt} onClick={() => onLeagueChange(opt)}>
-                {opt}
-              </Pill>
-            ))}
-          </div>
-        </div>
+      <div className="flex flex-wrap items-center gap-2 pt-2">
+        <span className={labelClass}>League</span>
+        {LEAGUE_OPTIONS.map((opt) => (
+          <Pill key={opt} active={league === opt} onClick={() => onLeagueChange(opt)}>
+            {opt}
+          </Pill>
+        ))}
 
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            Position
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {POSITION_OPTIONS.map((opt) => (
-              <Pill key={opt} active={position === opt} onClick={() => onPositionChange(opt)}>
-                {opt}
-              </Pill>
-            ))}
-          </div>
-        </div>
+        <Separator />
 
-        <div>
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground mb-2">
-            CMV range
-          </p>
-          <div className="flex flex-wrap gap-1.5">
-            {CMV_RANGE_OPTIONS.map((opt) => (
-              <Pill
-                key={opt.value}
-                active={cmvRange === opt.value}
-                onClick={() => onCmvRangeChange(opt.value)}
-              >
+        <span className={labelClass}>Pos</span>
+        {POSITION_OPTIONS.map((opt) => (
+          <Pill key={opt} active={position === opt} onClick={() => onPositionChange(opt)}>
+            {opt}
+          </Pill>
+        ))}
+
+        <Separator />
+
+        <span className={labelClass}>Cmv</span>
+        {CMV_RANGE_OPTIONS.map((opt) => (
+          <Pill
+            key={opt.value}
+            active={cmvRange === opt.value}
+            onClick={() => onCmvRangeChange(opt.value)}
+          >
+            {opt.label}
+          </Pill>
+        ))}
+
+        <Separator />
+
+        <span className={labelClass}>Sort</span>
+        <div className="relative w-[130px] shrink-0">
+          <select
+            value={sort}
+            onChange={(e) => onSortChange(e.target.value as SortOptionValue)}
+            className="h-[28px] w-[130px] cursor-pointer appearance-none rounded-[20px] border border-[rgba(56,160,71,0.15)] bg-[#0D1110] py-0 pl-3 pr-8 text-[11px] text-[#4A5E58] outline-none transition-colors hover:border-[rgba(56,160,71,0.25)] hover:text-[#7A9490] focus:border-[rgba(56,160,71,0.25)] focus:ring-1 focus:ring-[#2D7A3A]/40"
+          >
+            {SORT_OPTIONS.map((opt) => (
+              <option key={opt.value} value={opt.value}>
                 {opt.label}
-              </Pill>
+              </option>
             ))}
-          </div>
+          </select>
+          <ChevronDown className="pointer-events-none absolute right-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-[#4A5E58]" />
         </div>
 
-        <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4">
-          <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground shrink-0">
-            Sort by
-          </p>
-          <div className="relative min-w-[200px] max-w-sm flex-1">
-            <select
-              value={sort}
-              onChange={(e) => onSortChange(e.target.value as SortOptionValue)}
-              className="w-full appearance-none rounded-lg border border-border bg-background py-2.5 pl-3 pr-10 text-sm text-foreground outline-none focus:ring-2 focus:ring-[#7C6FFF]/30 cursor-pointer"
+        {showReset ? (
+          <>
+            <Separator />
+            <button
+              type="button"
+              onClick={onReset}
+              className="shrink-0 text-[11px] font-medium text-[#4A5E58] underline-offset-2 hover:underline"
             >
-              {SORT_OPTIONS.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {opt.label}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          </div>
-        </div>
+              Reset
+            </button>
+          </>
+        ) : null}
       </div>
     </div>
   );

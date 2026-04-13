@@ -18,7 +18,7 @@ export function LeagueFilter({ selected, onChange }: LeagueFilterProps) {
           onClick={() => onChange(league)}
           className={`px-3 py-1.5 text-sm rounded-lg transition-all ${
             selected === league
-              ? "bg-[#7C6FFF] text-white"
+              ? "bg-[#38A047] text-white"
               : "text-muted-foreground hover:text-foreground hover:bg-muted"
           }`}
         >

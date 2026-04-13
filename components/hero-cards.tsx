@@ -2,105 +2,99 @@
 
 import Link from "next/link"
 import { Player } from "@/lib/players"
+import { ArcGauge, subscoreColors } from "@/components/arc-gauge"
 
 interface HeroCardsProps {
   players: Player[]
 }
 
-function RankBadge({ rank }: { rank: number }) {
-  const getDotColor = (rank: number) => {
-    switch (rank) {
-      case 1: return "#FFD700"
-      case 2: return "#C0C0C0"
-      case 3: return "#CD7F32"
-      default: return "#888888"
-    }
-  }
-  
-  const getRankText = (rank: number) => {
-    switch (rank) {
-      case 1: return "1st"
-      case 2: return "2nd"
-      case 3: return "3rd"
-      default: return `${rank}th`
-    }
-  }
-
-  return (
-    <span 
-      style={{
-        display: "inline-flex",
-        alignItems: "center",
-        gap: "6px",
-        padding: "4px 10px",
-        borderRadius: "6px",
-        backgroundColor: "rgba(255,255,255,0.05)",
-        border: "1px solid rgba(255,255,255,0.1)",
-      }}
-    >
-      <span 
-        style={{
-          width: "5px",
-          height: "5px",
-          borderRadius: "50%",
-          backgroundColor: getDotColor(rank),
-        }}
-      />
-      <span style={{ fontSize: "12px", color: "rgba(255,255,255,0.6)", fontWeight: 500 }}>
-        {getRankText(rank)}
-      </span>
-    </span>
-  )
-}
+const rankGradients = [
+  "linear-gradient(145deg, #0D2B18 0%, #1A4A2A 60%, #0D1110 100%)",
+  "linear-gradient(145deg, #0D2218 0%, #1A3830 60%, #0D1110 100%)",
+  "linear-gradient(145deg, #1A1A0D 0%, #2E2A12 60%, #0D1110 100%)",
+];
 
 export function HeroCards({ players }: HeroCardsProps) {
   const topThree = players.slice(0, 3)
+  const gaugeMap = [
+    { label: "SPT", color: subscoreColors.sports, key: "sportsScore" as const },
+    { label: "SOC", color: subscoreColors.social, key: "socialScore" as const },
+    { label: "COM", color: subscoreColors.commercial, key: "commercialScore" as const },
+    { label: "BRD", color: subscoreColors.brandFit, key: "brandFitScore" as const },
+    { label: "MOM", color: subscoreColors.momentum, key: "momentumScore" as const },
+    { label: "ADJ", color: subscoreColors.adjustments, key: "adjustmentsScore" as const },
+  ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-0 bg-card rounded-[10px] border border-border overflow-hidden">
+    <div className="grid grid-cols-1 gap-0 overflow-hidden rounded-[10px] border border-border bg-card md:grid-cols-3">
       {topThree.map((player, index) => (
         <Link
           key={player.id}
           href={`/player/${player.id}`}
-          className={`group p-6 hover:bg-[#7C6FFF]/5 transition-all duration-200 ${
+          className={`group relative overflow-hidden p-6 transition-all duration-200 hover:bg-[rgba(45,122,58,0.04)] ${
             index < 2 ? "md:border-r md:border-border" : ""
           }`}
+          style={{ background: rankGradients[index] ?? rankGradients[2] }}
         >
-          {/* Rank Badge */}
-          <div style={{ marginBottom: "16px" }}>
-            <RankBadge rank={index + 1} />
+          <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.04]" viewBox="0 0 100 100" preserveAspectRatio="none">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <line key={`h-${i}`} x1="0" y1={i * 20} x2="100" y2={i * 20} stroke="white" strokeWidth="0.6" />
+            ))}
+            {Array.from({ length: 6 }).map((_, i) => (
+              <line key={`v-${i}`} x1={i * 20} y1="0" x2={i * 20} y2="100" stroke="white" strokeWidth="0.6" />
+            ))}
+          </svg>
+          <svg className="pointer-events-none absolute inset-0 h-full w-full opacity-[0.06]" viewBox="0 0 100 100">
+            <circle cx="50" cy="35" r="7" fill="white" />
+            <rect x="45" y="43" width="10" height="17" rx="5" fill="white" />
+            <line x1="45" y1="50" x2="35" y2="58" stroke="white" strokeWidth="4" strokeLinecap="round" />
+            <line x1="55" y1="50" x2="65" y2="56" stroke="white" strokeWidth="4" strokeLinecap="round" />
+            <line x1="47" y1="60" x2="40" y2="76" stroke="white" strokeWidth="4.5" strokeLinecap="round" />
+            <line x1="53" y1="60" x2="64" y2="71" stroke="white" strokeWidth="4.5" strokeLinecap="round" />
+          </svg>
+          <span className="pointer-events-none absolute bottom-1 right-3 font-display text-[100px] font-extrabold leading-none text-white/5">
+            {index + 1}
+          </span>
+
+          <div className="relative z-10 mb-4 flex items-start justify-between">
+            <span className="rounded-full border border-border bg-black/30 px-3 py-1 text-[10px] uppercase tracking-[0.18em] text-[#C8D8D4]">
+              {`RANK ${String(index + 1).padStart(2, "0")}`}
+            </span>
+            <span className="rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]" style={{ borderColor: player.accentColor, color: player.accentColor }}>
+              CMV {player.cmvScore}
+            </span>
           </div>
 
-          {/* Player Name & Club */}
-          <div style={{ marginBottom: "20px" }}>
-            <p style={{ fontSize: "15px", fontWeight: 500, color: "#ffffff", marginBottom: "4px" }}>
+          <div className="relative z-10 mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 text-lg font-semibold" style={{ borderColor: "rgba(56,160,71,0.22)", backgroundColor: "rgba(56,160,71,0.15)", color: "#E8F5EA" }}>
+            {player.name.split(" ").map((n) => n[0]).join("")}
+          </div>
+
+          <div className="relative z-10 mb-4">
+            <p className="font-display text-[15px] font-semibold text-white">
               {player.name}
             </p>
-            <p style={{ fontSize: "11px", color: "rgba(255,255,255,0.3)" }}>
+            <p className="text-[10px] text-[#4A5E58]">
               {player.club} · {player.position} · {player.flag}
             </p>
           </div>
 
-          {/* CMV Score */}
-          <div style={{ marginBottom: "16px" }}>
-            <p style={{ fontSize: "38px", fontWeight: 600, color: "#7C6FFF", lineHeight: 1, marginBottom: "4px" }}>
-              {player.cmvScore}
-            </p>
-            <p style={{ fontSize: "10px", color: "rgba(255,255,255,0.2)", letterSpacing: "0.06em", textTransform: "uppercase" }}>
-              CMV Score
-            </p>
+          <div className="relative z-10 mb-4 grid grid-cols-6 gap-1.5">
+            {gaugeMap.map((gauge) => (
+              <ArcGauge
+                key={gauge.label}
+                value={player[gauge.key]}
+                color={gauge.color}
+                label={gauge.label}
+                size={34}
+                strokeWidth={3}
+              />
+            ))}
           </div>
 
-          {/* Trend */}
-          <div>
-            <span
-              style={{
-                fontSize: "13px",
-                fontWeight: 500,
-                color: player.weeklyChange >= 0 ? "#00E5A0" : "#FF4D6A",
-              }}
-            >
-              {player.weeklyChange >= 0 ? "↑" : "↓"} {player.weeklyChange >= 0 ? "+" : ""}{player.weeklyChange.toFixed(1)} this week
+          <div className="relative z-10">
+            <span className={`text-xs font-medium ${player.weeklyChange >= 0 ? "text-[#2D9E50]" : "text-[#D94F4F]"}`}>
+              {player.weeklyChange >= 0 ? "↑" : "↓"} {player.weeklyChange >= 0 ? "+" : ""}
+              {player.weeklyChange.toFixed(1)} this week
             </span>
           </div>
         </Link>

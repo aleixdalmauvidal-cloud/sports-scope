@@ -47,7 +47,7 @@ function TrendRow({ change }: { change: number }) {
 
   const isPositive = change > 0
   const Icon = isPositive ? TrendingUp : TrendingDown
-  const colorClass = isPositive ? "text-[#00E5A0]" : "text-[#FF4D6A]"
+  const colorClass = isPositive ? "text-[#2D9E50]" : "text-[#D94F4F]"
 
   return (
     <div className={`flex items-center justify-center gap-1 ${colorClass}`}>
@@ -66,8 +66,8 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
       href={`/player/${player.id}`}
       className="group block rounded-[14px] overflow-hidden transition-all duration-200 hover:scale-[1.02] hover:shadow-lg"
       style={{
-        backgroundColor: "#0F0F1C",
-        border: "1px solid rgba(255,255,255,0.08)",
+        backgroundColor: "#1C2420",
+        border: "1px solid rgba(56,160,71,0.10)",
       }}
     >
       {/* Accent line at top */}
@@ -185,7 +185,7 @@ function PlayerCard({ player, displayRank }: { player: Player; displayRank: numb
       {/* Card Body */}
       <div className="p-4">
         {/* Player Name */}
-        <h3 className="text-[15px] font-bold text-foreground group-hover:text-[#7C6FFF] transition-colors mb-1">
+        <h3 className="mb-1 font-display text-[15px] font-bold text-foreground transition-colors group-hover:text-[#38A047]">
           {player.name}
         </h3>
         

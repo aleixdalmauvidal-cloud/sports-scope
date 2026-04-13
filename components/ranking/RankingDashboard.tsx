@@ -26,14 +26,14 @@ function positionBadge(pos: string) {
 
 /** Accent color by global rank (cycles every 8). */
 const RANK_ACCENTS = [
-  "#7C6FFF",
-  "#00E5A0",
-  "#FFB547",
-  "#4FC3F7",
-  "#7C6FFF",
-  "#00E5A0",
-  "#FF4D6A",
-  "#888888",
+  "#2D7A3A",
+  "#38A047",
+  "#C8D8D4",
+  "#7A9490",
+  "#2D7A3A",
+  "#38A047",
+  "#D94F4F",
+  "#4A5E58",
 ] as const;
 
 function accentForRank(rank: number): string {
@@ -48,12 +48,12 @@ function playerInitials(name: string): string {
 }
 
 const GAUGE_META = [
-  { key: "SPT", color: "#7C6FFF", get: (p: PlayerRow) => p.sports_score },
-  { key: "SOC", color: "#00E5A0", get: (p: PlayerRow) => p.social_score },
-  { key: "COM", color: "#FFB547", get: (p: PlayerRow) => p.commercial_score },
-  { key: "BRD", color: "#4FC3F7", get: (p: PlayerRow) => p.brand_fit_score },
-  { key: "MOM", color: "#FF6B9D", get: (p: PlayerRow) => p.momentum_score },
-  { key: "ADJ", color: "#69F0AE", get: (p: PlayerRow) => p.adjustment_score },
+  { key: "SPT", color: "#38A047", get: (p: PlayerRow) => p.sports_score },
+  { key: "SOC", color: "#7A9490", get: (p: PlayerRow) => p.social_score },
+  { key: "COM", color: "#C8D8D4", get: (p: PlayerRow) => p.commercial_score },
+  { key: "BRD", color: "#4A5E58", get: (p: PlayerRow) => p.brand_fit_score },
+  { key: "MOM", color: "#2D9E50", get: (p: PlayerRow) => p.momentum_score },
+  { key: "ADJ", color: "#2D7A3A", get: (p: PlayerRow) => p.adjustment_score },
 ] as const;
 
 /** Arc from -135° to +135° (270° sweep), math angles; y-up conversion for SVG. */
@@ -224,7 +224,7 @@ const sidebarItems = [
   { label: "Ajustes", href: "#", icon: "settings", active: false },
 ] as const;
 
-const CMV_GREEN = "#00E5A0";
+const CMV_GREEN = "#38A047";
 
 function SidebarIcon({ name }: { name: (typeof sidebarItems)[number]["icon"] }) {
   const cls = "h-[20px] w-[20px]";

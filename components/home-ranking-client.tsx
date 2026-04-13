@@ -6,7 +6,6 @@ import { SearchInput } from "@/components/search-input";
 import { HeroCards } from "@/components/hero-cards";
 import { RankingTable } from "@/components/ranking-table";
 import { PlayerCardsGrid } from "@/components/player-cards-grid";
-import { ViewToggle } from "@/components/view-toggle";
 import { RankingsFilterBar } from "@/components/rankings-filter-bar";
 import { WeeklyMovers } from "@/components/weekly-movers";
 import type { Player } from "@/lib/players";
@@ -66,14 +65,16 @@ export function HomeRankingClient({ initialPlayers }: Props) {
         <div className="p-6 lg:p-8">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-6">
             <div>
-              <h1 className="text-2xl lg:text-3xl font-bold text-foreground">CMV Rankings</h1>
-              <p className="text-sm text-muted-foreground mt-1">
-                Commercial Market Value · Football · 2026
+              <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[#38A047]">
+                CMV Intelligence · Football 2026
+              </p>
+              <h1 className="font-display text-[26px] font-bold text-foreground">Rankings CMV</h1>
+              <p className="mt-1 text-[11px] text-[#4A5E58]">
+                Top 30 · Commercial Market Value
               </p>
             </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full lg:w-auto">
-              <ViewToggle view={viewMode} onChange={setViewMode} />
+            <div className="flex w-full flex-col items-stretch gap-3 sm:flex-row sm:items-center lg:w-auto">
               <SearchInput value={searchQuery} onChange={setSearchQuery} />
             </div>
           </div>
@@ -92,6 +93,8 @@ export function HomeRankingClient({ initialPlayers }: Props) {
 
           <div className="mb-6">
             <RankingsFilterBar
+              view={viewMode}
+              onViewChange={setViewMode}
               league={league}
               onLeagueChange={setLeague}
               position={position}

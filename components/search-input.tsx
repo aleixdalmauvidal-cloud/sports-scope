@@ -17,7 +17,7 @@ export function SearchInput({ value, onChange, placeholder = "Search players, cl
         value={value}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full max-w-sm bg-card border border-border rounded-lg pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-[#7C6FFF]/50 focus:border-[#7C6FFF]/50 transition-all"
+        className="w-full max-w-sm rounded-lg border border-border bg-card py-2.5 pl-10 pr-4 text-sm text-foreground placeholder:text-muted-foreground transition-all focus:border-[#2D7A3A] focus:outline-none focus:ring-2 focus:ring-[#2D7A3A]/50"
       />
     </div>
   )
