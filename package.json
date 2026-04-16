@@ -14,6 +14,7 @@
     "scrape:instagram": "npx tsx scripts/scrape-instagram.ts",
     "scrape:tiktok": "npx tsx scripts/scrape-tiktok.ts",
     "analyze:brands": "npx tsx scripts/analyze-brand-fit.ts",
+    "pipeline:daily": "npx tsx scripts/daily-pipeline.ts",
     "setup:all": "npm run import:players && npm run sync:football && npm run calc:cmv"
   },
   "dependencies": {
