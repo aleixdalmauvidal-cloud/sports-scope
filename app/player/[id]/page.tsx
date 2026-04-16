@@ -116,6 +116,16 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     return val.toFixed(2)
   }
 
+  const brandVerticals: string[] =
+    (campaign?.brand_verticals ?? []).length === 0
+      ? ["sportswear", "lifestyle", "tech"]
+      : (campaign?.brand_verticals ?? []);
+
+  const detectedBrands: string[] =
+    (campaign?.brands_detected ?? []).length === 0
+      ? ["Sportswear", "Lifestyle"]
+      : (campaign?.brands_detected ?? []);
+
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
@@ -284,10 +294,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                       Brand Verticals
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {(campaign?.brand_verticals ?? []).length === 0
-                        ? ["sportswear", "lifestyle", "tech"]
-                        : campaign!.brand_verticals!
-                      ).map((v) => {
+                      {brandVerticals.map((v) => {
                         const key = v.toLowerCase()
                         let color = "#6B7280"
                         if (key === "sportswear") color = "#3B82F6"
@@ -315,10 +322,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                       Detected Brand Categories
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {(campaign?.brands_detected ?? []).length === 0
-                        ? ["Sportswear", "Lifestyle"]
-                        : campaign!.brands_detected!
-                      ).map((b) => (
+                      {detectedBrands.map((b) => (
                         <span
                           key={b}
                           className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs text-[#E5E7EB]"
