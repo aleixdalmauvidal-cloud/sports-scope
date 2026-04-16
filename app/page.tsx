@@ -22,7 +22,7 @@ import {
 } from "lucide-react"
 import { HomepageNav } from "@/components/homepage-nav"
 import { LiveTicker } from "@/components/live-ticker"
-import { mockPlayers, weeklyMovers } from "@/lib/mock-data"
+import { mockPlayers, weeklyMovers, getPlayerPhoto } from "@/lib/mock-data"
 
 const popularSearches = [
   "Lamine Yamal",
@@ -196,6 +196,118 @@ export default function HomePage() {
 
       <LiveTicker />
 
+      {/* FEATURED PLAYERS — spotlight with big photos */}
+      <section className="py-16 px-6 border-t border-border-default bg-gradient-to-b from-surface-1/30 to-transparent">
+        <div className="max-w-[1400px] mx-auto">
+          <div className="flex items-end justify-between mb-8 flex-wrap gap-4">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <Sparkles className="w-4 h-4 text-accent-primary" />
+                <span className="text-xs font-mono uppercase tracking-widest text-accent-primary">
+                  Today&apos;s spotlight
+                </span>
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight">Trending now</h2>
+            </div>
+            <Link
+              href="/rankings"
+              className="inline-flex items-center gap-2 text-sm text-foreground-secondary hover:text-accent-primary font-medium"
+            >
+              View all
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            {mockPlayers.slice(0, 3).map((player, i) => (
+              <motion.div
+                key={player.id}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+              >
+                <Link
+                  href={`/player/${player.id}`}
+                  className="group relative block overflow-hidden rounded-2xl bg-surface-1 border border-border-default hover:border-accent-primary/40 transition-all"
+                >
+                  <div className="relative aspect-[4/5] overflow-hidden">
+                    <Image
+                      src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+                      alt={player.name}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      sizes="(max-width: 768px) 100vw, 33vw"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/40 to-transparent" />
+
+                    {/* Rank badge top-left */}
+                    <div className="absolute top-4 left-4 flex items-center gap-2">
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-background/80 backdrop-blur-md border border-border-default">
+                        <span className="text-[10px] font-mono text-foreground-tertiary uppercase">Rank</span>
+                        <span className="font-mono text-sm font-bold text-accent-primary">
+                          #{player.rank}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Delta badge top-right */}
+                    <div className="absolute top-4 right-4">
+                      <div
+                        className={`flex items-center gap-1 px-2.5 py-1 rounded-md backdrop-blur-md border ${
+                          player.delta7d > 0
+                            ? "bg-positive/10 border-positive/30 text-positive"
+                            : player.delta7d < 0
+                            ? "bg-negative/10 border-negative/30 text-negative"
+                            : "bg-surface-2 border-border-default text-foreground-tertiary"
+                        }`}
+                      >
+                        {player.delta7d > 0 ? (
+                          <TrendingUp className="w-3 h-3" />
+                        ) : player.delta7d < 0 ? (
+                          <TrendingDown className="w-3 h-3" />
+                        ) : null}
+                        <span className="font-mono text-xs font-semibold">
+                          {player.delta7d > 0 ? "+" : ""}
+                          {player.delta7d.toFixed(1)}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Player info bottom */}
+                    <div className="absolute bottom-0 left-0 right-0 p-5">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-base">{player.nationalityFlag}</span>
+                        <span className="text-xs text-foreground-tertiary font-mono uppercase">
+                          {player.club} · {player.position}
+                        </span>
+                      </div>
+                      <h3 className="text-2xl font-bold tracking-tight mb-3 group-hover:text-accent-primary transition-colors">
+                        {player.name}
+                      </h3>
+
+                      <div className="flex items-end gap-4">
+                        <div>
+                          <div className="text-[10px] font-mono text-foreground-tertiary uppercase tracking-wider mb-0.5">
+                            CMV Score
+                          </div>
+                          <div className="font-mono text-3xl font-bold text-accent-primary leading-none">
+                            {player.cmvScore}
+                          </div>
+                        </div>
+                        <div className="flex-1 pb-1">
+                          <MiniSparkline data={player.trendData} trend={player.trend} />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
       {/* TOP RANKINGS — data first */}
       <section className="py-20 px-6">
         <div className="max-w-[1400px] mx-auto">
@@ -258,17 +370,14 @@ export default function HomePage() {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-full bg-surface-3 overflow-hidden shrink-0 border border-border-default">
-                      {player.imageId && (
-                        <Image
-                          src={`https://images.fotmob.com/image_resources/playerimages/${player.imageId}.png`}
-                          alt={player.name}
-                          width={36}
-                          height={36}
-                          className="w-full h-full object-cover"
-                          unoptimized
-                        />
-                      )}
+                    <div className="w-10 h-10 rounded-full bg-surface-3 overflow-hidden shrink-0 border border-border-default ring-2 ring-transparent group-hover:ring-accent-primary/40 transition-all">
+                      <Image
+                        src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+                        alt={player.name}
+                        width={40}
+                        height={40}
+                        className="w-full h-full object-cover"
+                      />
                     </div>
                     <div className="min-w-0">
                       <div className="font-medium text-sm text-foreground truncate group-hover:text-accent-primary transition-colors">
@@ -508,17 +617,14 @@ export default function HomePage() {
                     className="flex items-center justify-between px-5 py-4 border-b border-border-default last:border-b-0 hover:bg-surface-2 transition-colors group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-surface-3 overflow-hidden border border-border-default">
-                        {full?.imageId && (
-                          <Image
-                            src={`https://images.fotmob.com/image_resources/playerimages/${full.imageId}.png`}
-                            alt={p.name}
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover"
-                            unoptimized
-                          />
-                        )}
+                      <div className="w-11 h-11 rounded-full bg-surface-3 overflow-hidden border border-border-default ring-2 ring-positive/30">
+                        <Image
+                          src={getPlayerPhoto(full?.rank ?? 1) || "/placeholder.svg"}
+                          alt={p.name}
+                          width={44}
+                          height={44}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div>
                         <div className="font-medium text-sm group-hover:text-accent-primary transition-colors">
@@ -553,17 +659,14 @@ export default function HomePage() {
                     className="flex items-center justify-between px-5 py-4 border-b border-border-default last:border-b-0 hover:bg-surface-2 transition-colors group"
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-surface-3 overflow-hidden border border-border-default">
-                        {full?.imageId && (
-                          <Image
-                            src={`https://images.fotmob.com/image_resources/playerimages/${full.imageId}.png`}
-                            alt={p.name}
-                            width={40}
-                            height={40}
-                            className="w-full h-full object-cover"
-                            unoptimized
-                          />
-                        )}
+                      <div className="w-11 h-11 rounded-full bg-surface-3 overflow-hidden border border-border-default ring-2 ring-negative/30">
+                        <Image
+                          src={getPlayerPhoto(full?.rank ?? 1) || "/placeholder.svg"}
+                          alt={p.name}
+                          width={44}
+                          height={44}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <div>
                         <div className="font-medium text-sm group-hover:text-accent-primary transition-colors">
