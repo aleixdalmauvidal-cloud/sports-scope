@@ -121,7 +121,7 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
   const supabase = getSupabase();
   if (!supabase) return null;
 
-  const [athRes, cmvRes, sportRes, socialRes] = await Promise.all([
+  const [athRes, cmvRes, sportRes, socialRes, csRes, bfRes] = await Promise.all([
     supabase
       .from("athletes")
       .select("id, name, position, nationality, age, photo_url, clubs ( name, league )")
@@ -150,6 +150,22 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
       .order("date", { ascending: false })
       .limit(1)
       .maybeSingle(),
+    supabase
+      .from("campaign_signals" as any)
+      .select(
+        "branded_posts_count, brands_detected, brand_verticals, sponsorship_density, brand_safety_score, unique_brands_count"
+      )
+      .eq("athlete_id", id)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
+    supabase
+      .from("brand_fit" as any)
+      .select("lifestyle_score, fit_sportswear, fit_betting, brand_safety_score")
+      .eq("athlete_id", id)
+      .order("date", { ascending: false })
+      .limit(1)
+      .maybeSingle(),
   ]);
 
   if (athRes.error) {
@@ -163,6 +179,12 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
   }
   if (socialRes.error) {
     console.error("getPlayerProfile (social_metrics):", socialRes.error.message);
+  }
+  if (csRes.error) {
+    console.error("getPlayerProfile (campaign_signals):", csRes.error.message);
+  }
+  if (bfRes.error) {
+    console.error("getPlayerProfile (brand_fit):", bfRes.error.message);
   }
 
   if (!athRes.data) return null;
@@ -191,6 +213,38 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
 
   const cmv_rank = await getAthleteCmvRank(a.id, 500);
 
+  const rawSocial = socialRes.data as Record<string, unknown> | null;
+  const socialDetail =
+    rawSocial && typeof rawSocial === "object"
+      ? {
+          avg_likes: num((rawSocial as any).avg_likes),
+          avg_comments: num((rawSocial as any).avg_comments),
+          avg_views: num((rawSocial as any).avg_views),
+          posting_frequency: num((rawSocial as any).posting_frequency),
+          tt_avg_views: num((rawSocial as any).tt_avg_views),
+        }
+      : null;
+
+  const csRow = csRes.data as
+    | {
+        branded_posts_count?: number | null;
+        brands_detected?: string[] | null;
+        brand_verticals?: string[] | null;
+        sponsorship_density?: number | null;
+        brand_safety_score?: number | null;
+        unique_brands_count?: number | null;
+      }
+    | null;
+
+  const bfRow = bfRes.data as
+    | {
+        lifestyle_score?: number | null;
+        fit_sportswear?: number | null;
+        fit_betting?: number | null;
+        brand_safety_score?: number | null;
+      }
+    | null;
+
   return {
     id: a.id,
     name: a.name,
@@ -214,6 +268,9 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
     social_metrics: normalizeSocialMetrics(
       socialRes.data as Record<string, unknown> | null
     ),
+    campaign_signals: csRow ?? null,
+    brand_fit_detail: bfRow ?? null,
+    social_metrics_detail: socialDetail,
   };
 }
 

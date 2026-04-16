@@ -7,7 +7,7 @@ import { PlayerProfileAnalysis } from "@/components/player-profile-analysis"
 import { PlayerStatStrip } from "@/components/player-stat-strip"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
-import { formatScore } from "@/lib/format"
+import { formatScore, formatFollowersCompact, formatPercentValue, formatInteger } from "@/lib/format"
 
 interface PlayerPageProps {
   params: Promise<{ id: string }>
@@ -49,6 +49,72 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const isPositiveChange = player.weeklyChange >= 0
   const rankWatermark = profile.cmv_rank ?? player.rank
   const initials = player.name.split(" ").map((n) => n[0]).join("")
+
+  const campaign = profile.campaign_signals
+  const brandFit = profile.brand_fit_detail
+  const social = profile.social_metrics
+  const socialDetail = profile.social_metrics_detail
+  const sports = profile.sports_metrics
+
+  const display = (v: unknown): string => (v === null || v === undefined ? "—" : String(v))
+
+  const barColor = (v: number | null | undefined): string => {
+    if (v == null) return "bg-[#4B5563]"
+    if (v > 70) return "bg-[#00ff87]"
+    if (v >= 50) return "bg-[#FACC15]"
+    return "bg-[#F97373]"
+  }
+
+  const safePercent = (v: number | null | undefined): string =>
+    v == null ? "—" : `${v.toFixed(1)}%`
+
+  const toNumber = (v: unknown): number | null => {
+    if (v === null || v === undefined || v === "") return null
+    const n = Number(v)
+    return Number.isFinite(n) ? n : null
+  }
+
+  const igFollowersNum = social?.ig_followers ?? null
+  const engagementNum = social?.engagement_rate ?? null
+  const lifestyleScore = brandFit?.lifestyle_score ?? null
+  const fitSportswear = brandFit?.fit_sportswear ?? null
+  const fitBetting = brandFit?.fit_betting ?? null
+  const brandSafety = brandFit?.brand_safety_score ?? null
+
+  const recommendedCampaigns: string[] = []
+  if (lifestyleScore != null && lifestyleScore > 70) recommendedCampaigns.push("Brand Ambassador")
+  if (igFollowersNum != null && igFollowersNum > 10_000_000) recommendedCampaigns.push("Social Activation")
+  if (engagementNum != null && engagementNum > 5) recommendedCampaigns.push("Influencer Campaign")
+  if (fitSportswear != null && fitSportswear > 80) recommendedCampaigns.push("Product Launch")
+  if (brandSafety != null && brandSafety > 85) recommendedCampaigns.push("Premium Partnership")
+
+  const uniqueRecommended = Array.from(new Set(recommendedCampaigns)).slice(0, 3)
+
+  const audienceQuality = (() => {
+    if (engagementNum == null) return "—"
+    if (engagementNum > 8) return "Elite"
+    if (engagementNum > 5) return "High"
+    if (engagementNum > 2) return "Average"
+    return "Low"
+  })()
+
+  const leagueBenchmarkLabel =
+    engagementNum != null && engagementNum > 5 ? "Above average" : engagementNum != null ? "Average" : "—"
+
+  const goals = sports?.goals ?? null
+  const assists = sports?.assists ?? null
+  const minutes = sports?.minutes_played ?? null
+  const matches = sports?.matches_played ?? null
+  const rating = sports?.rating ?? null
+  const passAccuracy = sports?.pass_accuracy ?? null
+
+  const per90 = (stat: number | null | undefined, min: number | null | undefined): string => {
+    if (stat == null || min == null || !Number.isFinite(Number(stat)) || !Number.isFinite(Number(min)) || min <= 0) {
+      return "—"
+    }
+    const val = (Number(stat) / Number(min)) * 90
+    return val.toFixed(2)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -173,7 +239,361 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
             </section>
           </div>
 
-          {isAuthed ? <PlayerProfileAnalysis player={player} profile={profile} /> : <PlayerAnalysisLocked />}
+          {isAuthed ? (
+            <>
+              <PlayerProfileAnalysis player={player} profile={profile} />
+
+              {/* COMMERCIAL INTELLIGENCE */}
+              <section className="mt-10 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
+                  Commercial Intelligence
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Sponsored Content
+                    </p>
+                    <p className="mt-2 text-sm text-[#9CA3AF]">Branded posts / month</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {campaign?.branded_posts_count != null ? campaign.branded_posts_count : "—"}
+                    </p>
+                    <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Sponsorship density
+                    </p>
+                    {campaign?.sponsorship_density != null ? (
+                      <div className="mt-1">
+                        <div className="mb-1 flex items-center justify-between text-xs text-[#9CA3AF]">
+                          <span>{(campaign.sponsorship_density * 100).toFixed(1)}%</span>
+                        </div>
+                        <div className="h-2 rounded-full bg-[#111827]">
+                          <div
+                            className="h-2 rounded-full bg-[#00ff87]"
+                            style={{ width: `${Math.min(100, campaign.sponsorship_density * 100)}%` }}
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="mt-1 text-sm text-[#9CA3AF]">—</p>
+                    )}
+                  </div>
+
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Brand Verticals
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(campaign?.brand_verticals ?? []).length === 0
+                        ? ["sportswear", "lifestyle", "tech"]
+                        : campaign!.brand_verticals!
+                      ).map((v) => {
+                        const key = v.toLowerCase()
+                        let color = "#6B7280"
+                        if (key === "sportswear") color = "#3B82F6"
+                        else if (key === "lifestyle") color = "#10B981"
+                        else if (key === "tech") color = "#8B5CF6"
+                        else if (key === "betting") color = "#F97316"
+                        else if (key === "luxury") color = "#FACC15"
+                        return (
+                          <span
+                            key={v}
+                            className="rounded-full bg-[#111827] px-3 py-1 text-xs font-medium"
+                            style={{ border: `1px solid ${color}55`, color }}
+                          >
+                            {v}
+                          </span>
+                        )
+                      })}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Detected Brand Categories
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(campaign?.brands_detected ?? []).length === 0
+                        ? ["Sportswear", "Lifestyle"]
+                        : campaign!.brands_detected!
+                      ).map((b) => (
+                        <span
+                          key={b}
+                          className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs text-[#E5E7EB]"
+                        >
+                          {b}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Recommended Campaigns
+                    </p>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {(uniqueRecommended.length ? uniqueRecommended : ["Brand Ambassador"]).map((c) => (
+                        <span
+                          key={c}
+                          className="rounded-full border border-[#00ff87]/40 bg-[#00ff87]/10 px-3 py-1 text-xs font-medium text-[#E5E7EB]"
+                        >
+                          {c}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </section>
+
+              {/* BRAND FIT BREAKDOWN */}
+              <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
+                  Brand Fit Breakdown
+                </p>
+                <div className="space-y-3">
+                  {[
+                    { label: "Lifestyle Appeal", value: lifestyleScore },
+                    { label: "Sportswear Fit", value: fitSportswear },
+                    { label: "Betting Fit", value: fitBetting },
+                    { label: "Brand Safety", value: brandSafety },
+                  ].map((item) => (
+                    <div key={item.label}>
+                      <div className="mb-1 flex items-center justify-between text-xs">
+                        <span className="uppercase tracking-[0.16em] text-[#6B7280]">
+                          {item.label}
+                        </span>
+                        <span className="font-semibold text-white">
+                          {item.value != null ? item.value : "—"}
+                        </span>
+                      </div>
+                      <div className="h-2 rounded-full bg-[#111827]">
+                        <div
+                          className={`h-2 rounded-full ${barColor(item.value)}`}
+                          style={{
+                            width: `${
+                              item.value != null ? Math.min(100, Math.max(0, item.value)) : 0
+                            }%`,
+                          }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </section>
+
+              {/* SOCIAL MEDIA DEEP DIVE */}
+              <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
+                  Social Media Deep Dive
+                </p>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {/* Instagram */}
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Instagram
+                    </p>
+                    <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {igFollowersNum != null ? formatFollowersCompact(igFollowersNum) : "—"}
+                    </p>
+                    <div className="mt-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-[#9CA3AF]">Engagement rate</p>
+                        <p className="text-sm font-semibold text-white">
+                          {engagementNum != null ? formatPercentValue(engagementNum) : "—"}
+                        </p>
+                      </div>
+                      <span className="rounded-full bg-[#111827] px-2.5 py-1 text-xs text-[#10B981]">
+                        {leagueBenchmarkLabel}
+                      </span>
+                    </div>
+                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-[#9CA3AF]">
+                      <div>
+                        <p className="text-xs text-[#6B7280]">Avg likes</p>
+                        <p className="mt-1 text-white">
+                          {socialDetail?.avg_likes != null
+                            ? formatInteger(socialDetail.avg_likes)
+                            : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#6B7280]">Avg comments</p>
+                        <p className="mt-1 text-white">
+                          {socialDetail?.avg_comments != null
+                            ? formatInteger(socialDetail.avg_comments)
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* TikTok */}
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      TikTok
+                    </p>
+                    <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {social?.tt_followers != null
+                        ? formatFollowersCompact(social.tt_followers)
+                        : "—"}
+                    </p>
+                    <div className="mt-3">
+                      <p className="text-xs text-[#6B7280]">Avg views</p>
+                      <p className="mt-1 text-sm font-semibold text-white">
+                        {socialDetail?.tt_avg_views != null
+                          ? formatInteger(socialDetail.tt_avg_views)
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Content
+                    </p>
+                    <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <p className="text-xs text-[#6B7280]">Posting frequency</p>
+                        <p className="mt-1 font-semibold text-white">
+                          {socialDetail?.posting_frequency != null
+                            ? `${socialDetail.posting_frequency.toFixed(2)} posts/day`
+                            : "—"}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-xs text-[#6B7280]">Avg video views</p>
+                        <p className="mt-1 font-semibold text-white">
+                          {socialDetail?.avg_views != null
+                            ? formatInteger(socialDetail.avg_views)
+                            : "—"}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Audience Quality */}
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      Audience Quality
+                    </p>
+                    <p className="mt-2 text-sm text-[#9CA3AF]">
+                      Engagement vs follower base
+                    </p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {audienceQuality}
+                    </p>
+                  </div>
+                </div>
+              </section>
+
+              {/* SPORTS PERFORMANCE DETAIL */}
+              <section className="mt-8 mb-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
+                  Sports Performance Detail
+                </p>
+                <div className="grid gap-4 md:grid-cols-4">
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Goals</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">
+                      {goals != null ? goals : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Assists</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">
+                      {assists != null ? assists : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Apps</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">
+                      {matches != null ? matches : "—"}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Minutes</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">
+                      {minutes != null ? minutes : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
+                      Form Rating
+                    </p>
+                    <p className="mt-1 text-sm text-[#9CA3AF]">0–10</p>
+                    <div className="mt-2 h-2 rounded-full bg-[#111827]">
+                      <div
+                        className="h-2 rounded-full bg-[#00ff87]"
+                        style={{
+                          width: `${
+                            rating != null
+                              ? Math.min(100, Math.max(0, (Number(rating) / 10) * 100))
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-white">
+                      {rating != null ? rating.toFixed(2) : "—"}
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
+                      Pass Accuracy
+                    </p>
+                    <p className="mt-1 text-sm text-[#9CA3AF]">0–100%</p>
+                    <div className="mt-2 h-2 rounded-full bg-[#111827]">
+                      <div
+                        className="h-2 rounded-full bg-[#00ff87]"
+                        style={{
+                          width: `${
+                            passAccuracy != null
+                              ? Math.min(100, Math.max(0, Number(passAccuracy)))
+                              : 0
+                          }%`,
+                        }}
+                      />
+                    </div>
+                    <p className="mt-2 text-sm font-semibold text-white">
+                      {passAccuracy != null ? `${passAccuracy.toFixed(1)}%` : "—"}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6 grid gap-4 md:grid-cols-3">
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
+                      Goals per 90
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-white">
+                      {per90(goals, minutes)}
+                    </p>
+                  </div>
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
+                      Assists per 90
+                    </p>
+                    <p className="mt-2 text-lg font-semibold text-white">
+                      {per90(assists, minutes)}
+                    </p>
+                  </div>
+                  <div className="flex items-center justify-end rounded-lg bg-[#12121A] p-4">
+                    <span className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#9CA3AF]">
+                      2025/26
+                    </span>
+                  </div>
+                </div>
+              </section>
+            </>
+          ) : (
+            <PlayerAnalysisLocked />
+          )}
         </div>
       </main>
     </div>

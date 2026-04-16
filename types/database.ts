@@ -109,6 +109,27 @@ export type PlayerProfile = {
   cmv_total: number;
   sports_metrics: SportsMetricsRow | null;
   social_metrics: SocialMetricsRow | null;
+  campaign_signals: {
+    branded_posts_count?: number | null;
+    brands_detected?: string[] | null;
+    brand_verticals?: string[] | null;
+    sponsorship_density?: number | null;
+    brand_safety_score?: number | null;
+    unique_brands_count?: number | null;
+  } | null;
+  brand_fit_detail: {
+    lifestyle_score?: number | null;
+    fit_sportswear?: number | null;
+    fit_betting?: number | null;
+    brand_safety_score?: number | null;
+  } | null;
+  social_metrics_detail: {
+    avg_likes?: number | null;
+    avg_comments?: number | null;
+    avg_views?: number | null;
+    posting_frequency?: number | null;
+    tt_avg_views?: number | null;
+  } | null;
 };
 
 /** Respuesta anidada de PostgREST al seleccionar desde `cmv_scores` */
