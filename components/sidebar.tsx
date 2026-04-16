@@ -24,7 +24,7 @@ export function Sidebar() {
   const pathname = usePathname()
 
   return (
-    <aside className="fixed left-0 top-0 h-screen w-[220px] bg-[#0A0B12] border-r border-[rgba(255,255,255,0.06)] flex flex-col z-50">
+    <aside className="fixed left-0 top-0 h-screen w-[220px] bg-[#070D1A] border-r border-[rgba(255,255,255,0.06)] flex flex-col z-50">
       {/* Logo */}
       <div className="h-[52px] flex items-center px-5 border-b border-[rgba(255,255,255,0.06)]">
         <Link href="/" className="flex items-center">
@@ -64,8 +64,8 @@ export function Sidebar() {
                       className={cn(
                         "relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors duration-150",
                         isActive
-                          ? "bg-[rgba(0,229,160,0.08)] text-accent-primary"
-                          : "text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)]"
+                          ? "bg-[rgba(0,255,135,0.1)] text-accent-primary"
+                          : "text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.04)]"
                       )}
                       whileTap={{ scale: 0.97 }}
                     >

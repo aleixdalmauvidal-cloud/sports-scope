@@ -13,13 +13,12 @@ const tickerData = [
 
 function TickerItem({ name, cmv, delta, up }: { name: string; cmv: number; delta: number; up: boolean }) {
   return (
-    <span className="inline-flex items-center gap-2 whitespace-nowrap">
-      <span className="text-foreground-tertiary">{name}</span>
-      <span className="text-foreground-secondary">·</span>
-      <span className="text-foreground-secondary">CMV {cmv}</span>
-      <span className="text-foreground-secondary">·</span>
-      <span className={up ? "text-positive" : "text-negative"}>
-        {up ? "↑" : "↓"} {up ? "+" : ""}{delta.toFixed(1)}
+    <span className="inline-flex items-center gap-3 whitespace-nowrap">
+      <span className="text-foreground font-medium">{name}</span>
+      <span className="text-foreground-tertiary">CMV</span>
+      <span className="font-semibold text-accent-primary">{cmv}</span>
+      <span className={`font-semibold ${up ? "text-positive" : "text-negative"}`}>
+        {up ? "+" : ""}{delta.toFixed(1)}
       </span>
     </span>
   )
@@ -29,8 +28,8 @@ export function LiveTicker() {
   const items = [...tickerData, ...tickerData] // Duplicate for seamless loop
 
   return (
-    <div className="w-full overflow-hidden border-t border-b border-border-default bg-[rgba(255,255,255,0.03)]">
-      <div className="animate-ticker flex items-center gap-12 py-3 font-mono text-xs">
+    <div className="w-full overflow-hidden border-t border-b border-border-default bg-[rgba(0,255,135,0.02)]">
+      <div className="animate-ticker flex items-center gap-12 py-3.5 font-mono text-xs">
         {items.map((item, index) => (
           <TickerItem key={index} {...item} />
         ))}
