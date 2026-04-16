@@ -128,14 +128,20 @@ Engagement rate: ${engagement_rate ?? "—"}%
 Recent Instagram post captions:
 ${captionsList}
 
-Use web search to look up: "${name} sponsors campaigns endorsements 2024 2025"
-
 Based on the captions above AND your knowledge of this athlete's known sponsorships and brand deals, identify:
 
 Return ONLY valid JSON:
 {
   'branded_posts_count': number (0-20),
-  'brands_detected': string[] (REAL brand names like 'Adidas', 'Nike', 'Pepsi', 'Beats', 'EA Sports' - NOT categories),
+  'brands_detected': string[] (list 3-8 SPECIFIC real brand names this athlete is known to work with or likely works with based on their profile. Use actual brand names like:
+    "Adidas", "Nike", "Puma", "New Balance" for sportswear;
+    "Pepsi", "Coca-Cola", "Gatorade", "Red Bull" for beverages;
+    "EA Sports", "PlayStation", "Xbox" for gaming;
+    "BMW", "Mercedes", "Audi" for automotive;
+    "Beats", "Apple", "Samsung" for tech;
+    "Armani", "Hugo Boss", "Louis Vuitton" for luxury.
+    NEVER return empty array - always estimate based on athlete profile.
+    For top footballers always include at least their kit sponsor.),
   'brand_verticals': string[] (categories: sportswear, betting, luxury, tech, lifestyle, nutrition, automotive, gaming),
   'sponsorship_density': number (0-1),
   'lifestyle_score': number (0-100),
@@ -143,7 +149,9 @@ Return ONLY valid JSON:
   'fit_betting': number (0-100),
   'brand_safety_score': number (0-100),
   'campaign_types': string[] (types of campaigns detected: ambassador, product_launch, social_activation, event, charity)
-}`;
+}
+
+IMPORTANT: brands_detected and brand_verticals must NEVER be empty arrays. Always provide at least 2-3 estimated brands and 2-3 verticals based on the athlete's profile and typical endorsement patterns for players of their caliber.`;
 }
 
 async function main(): Promise<void> {
