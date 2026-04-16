@@ -10,6 +10,8 @@ import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
 import { formatScore, formatFollowersCompact, formatPercentValue, formatInteger } from "@/lib/format"
 
+export const dynamic = "force-dynamic"
+
 interface PlayerPageProps {
   params: Promise<{ id: string }>
 }
