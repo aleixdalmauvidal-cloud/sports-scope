@@ -31,7 +31,7 @@ function readRequiredServiceRoleKey(): string {
 
 const serviceRoleKey = readRequiredServiceRoleKey();
 
-const SEASON = 2024;
+const SEASON = 2025;
 /** Free tier ~10 req/min; spacing between athletes keeps 2 calls/player safe. */
 const DELAY_BETWEEN_PLAYERS_MS = 8000;
 /** Pause after search before the stats request (same athlete). */
@@ -181,7 +181,7 @@ async function main(): Promise<void> {
       };
 
       const { error } = await supabase.from("sports_metrics").upsert(row, {
-        onConflict: "athlete_id,season",
+        onConflict: "athlete_id,date",
       });
 
       if (error) {
