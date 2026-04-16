@@ -17,6 +17,7 @@ type SocialMetrics = {
   avg_views_per_post?: number | null;
   avg_views?: number | null;
   avg_likes?: number | null;
+  latest_post_captions?: string[] | null;
 };
 
 function requiredEnv(name: string): string {
@@ -75,7 +76,7 @@ async function callAnthropic(prompt: string): Promise<any> {
     },
     body: JSON.stringify({
       model: "claude-sonnet-4-20250514",
-      max_tokens: 700,
+      max_tokens: 500,
       temperature: 0.2,
       messages: [{ role: "user", content: prompt }],
     }),
@@ -104,7 +105,7 @@ function buildPrompt(args: {
   league: string | null;
   ig_followers: number | null;
   engagement_rate: number | null;
-  avg_views: number | null;
+  captions: string[];
 }): string {
   const {
     name,
@@ -112,28 +113,36 @@ function buildPrompt(args: {
     league,
     ig_followers,
     engagement_rate,
-    avg_views,
+    captions,
   } = args;
-  return `You are a sports marketing intelligence analyst. Analyze this athlete's
-Instagram profile and return ONLY a JSON object with no other text:
+  const captionsList =
+    captions.length > 0 ? captions.map((c, i) => `- (${i + 1}) ${c}`).join("\n") : "—";
+  return `You are a sports marketing analyst specialized in brand detection.
 
 Athlete: ${name}
 Club: ${club ?? "—"}
-League: ${league ?? "—"}  
+League: ${league ?? "—"}
 Instagram followers: ${ig_followers ?? "—"}
 Engagement rate: ${engagement_rate ?? "—"}%
-Average views: ${avg_views ?? "—"}
 
-Based on this public profile data, estimate:
+Recent Instagram post captions:
+${captionsList}
+
+Use web search to look up: "${name} sponsors campaigns endorsements 2024 2025"
+
+Based on the captions above AND your knowledge of this athlete's known sponsorships and brand deals, identify:
+
+Return ONLY valid JSON:
 {
-  'branded_posts_count': number (0-20, estimated branded/sponsored posts per month),
-  'brands_detected': string[] (list of likely brand categories this athlete promotes),
-  'brand_verticals': string[] (verticals: sportswear, betting, luxury, tech, lifestyle, nutrition, automotive),
-  'sponsorship_density': number (0-1, ratio of branded content),
-  'lifestyle_score': number (0-100, lifestyle appeal and aspirational value),
-  'fit_sportswear': number (0-100, fit for sportswear brands),
-  'fit_betting': number (0-100, fit for betting brands),
-  'brand_safety_score': number (0-100, brand safety, 100=very safe)
+  'branded_posts_count': number (0-20),
+  'brands_detected': string[] (REAL brand names like 'Adidas', 'Nike', 'Pepsi', 'Beats', 'EA Sports' - NOT categories),
+  'brand_verticals': string[] (categories: sportswear, betting, luxury, tech, lifestyle, nutrition, automotive, gaming),
+  'sponsorship_density': number (0-1),
+  'lifestyle_score': number (0-100),
+  'fit_sportswear': number (0-100),
+  'fit_betting': number (0-100),
+  'brand_safety_score': number (0-100),
+  'campaign_types': string[] (types of campaigns detected: ambassador, product_launch, social_activation, event, charity)
 }`;
 }
 
@@ -186,6 +195,9 @@ async function main(): Promise<void> {
       avg_views_per_post: safeNumber((r as any).avg_views_per_post),
       avg_views: safeNumber((r as any).avg_views),
       avg_likes: safeNumber((r as any).avg_likes),
+      latest_post_captions: Array.isArray((r as any).latest_post_captions)
+        ? (r as any).latest_post_captions
+        : null,
     });
   }
 
@@ -196,7 +208,7 @@ async function main(): Promise<void> {
     const social = latestSocial.get(athlete.id);
     const igFollowers = social?.ig_followers ?? null;
     const engagementRate = social?.engagement_rate ?? null;
-    const avgViews = social?.avg_views_per_post ?? social?.avg_views ?? null;
+    const captions = normalizeStringArray(social?.latest_post_captions ?? []).slice(0, 5);
 
     const prompt = buildPrompt({
       name: athlete.name,
@@ -204,15 +216,17 @@ async function main(): Promise<void> {
       league: athlete.clubs?.league ?? null,
       ig_followers: igFollowers,
       engagement_rate: engagementRate,
-      avg_views: avgViews,
+      captions,
     });
 
     process.stdout.write(`[analyze:brands] ${athlete.name}… `);
     try {
+      await new Promise((r) => setTimeout(r, 8000));
       const estimate = await callAnthropic(prompt);
 
       const brandsDetected = normalizeStringArray(estimate?.brands_detected);
       const brandVerticals = normalizeStringArray(estimate?.brand_verticals);
+      const campaignTypes = normalizeStringArray(estimate?.campaign_types);
       const brandSafetyScore = safeNumber(estimate?.brand_safety_score);
 
       const campaignSignalsPayload = {
@@ -224,6 +238,7 @@ async function main(): Promise<void> {
         sponsorship_density: safeNumber(estimate?.sponsorship_density),
         brand_safety_score: brandSafetyScore,
         unique_brands_count: uniqueCount(brandsDetected),
+        campaign_types: campaignTypes,
       } as any;
 
       const { error: csErr } = await supabase

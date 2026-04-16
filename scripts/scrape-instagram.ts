@@ -82,6 +82,10 @@ async function saveToSupabase(
   followers: number | null,
 ) {
   const today = new Date().toISOString().split('T')[0]
+  const captions = posts
+    .map((p: any) => p.caption ?? p.text ?? '')
+    .filter(Boolean)
+    .slice(0, 12)
   const avgLikes = posts.length > 0
     ? Math.round(posts.reduce((acc: number, p: any) => acc + (p.likesCount ?? 0), 0) / posts.length)
     : null
@@ -125,6 +129,7 @@ async function saveToSupabase(
       posting_frequency: postingFrequency,
       follower_growth_30d: followerGrowth30d,
       avg_saves: avgSaves,
+      latest_post_captions: captions,
       engagement_rate: engagementRate,
     }, { onConflict: 'athlete_id,date' })
 
