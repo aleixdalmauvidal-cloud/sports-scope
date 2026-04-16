@@ -1,150 +1,152 @@
 "use client"
 
+import { useState } from "react"
 import { motion } from "framer-motion"
+import { Download, SlidersHorizontal, ChevronDown, ChevronLeft, ChevronRight } from "lucide-react"
 import { AppShell } from "@/components/app-shell"
-import { PlayerAvatar } from "@/components/player-avatar"
-import { TierBadge } from "@/components/tier-badge"
-import { Sparkline } from "@/components/sparkline"
-import { ScoreBar } from "@/components/score-bar"
-import { DeltaIndicator } from "@/components/delta-indicator"
-import { AnimatedNumber } from "@/components/animated-number"
-import { mockPlayers, mockStats } from "@/lib/mock-data"
-import { cn } from "@/lib/utils"
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.05,
-    },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 8 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-}
+import { KpiCard } from "@/components/kpi-card"
+import { WeeklyMovers } from "@/components/weekly-movers"
+import { LeagueTabs } from "@/components/league-tabs"
+import { RankingsTable } from "@/components/rankings-table"
+import { mockPlayers, weeklyMovers, type League } from "@/lib/mock-data"
 
 export default function RankingsPage() {
+  const [activeLeague, setActiveLeague] = useState<League>("All")
+
+  const filteredPlayers =
+    activeLeague === "All"
+      ? mockPlayers
+      : mockPlayers.filter((p) => p.league === activeLeague)
+
   return (
-    <AppShell title="Rankings">
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-        className="space-y-6"
-      >
-        {/* Stats Cards */}
-        <motion.div variants={itemVariants} className="grid grid-cols-4 gap-4">
-          {mockStats.map((stat, index) => (
-            <div
-              key={stat.label}
-              className="bg-background-surface rounded-lg p-5 shadow-card"
-            >
-              <p className="text-foreground-secondary text-sm mb-2">{stat.label}</p>
-              <div className="flex items-end justify-between">
-                <span className="text-2xl font-mono font-semibold text-foreground">
-                  {typeof stat.value === "number" ? (
-                    <AnimatedNumber value={stat.value} />
-                  ) : (
-                    stat.value
-                  )}
-                </span>
-                <DeltaIndicator value={stat.change} />
-              </div>
-            </div>
-          ))}
+    <AppShell>
+      <div className="space-y-6">
+        {/* Page Header */}
+        <motion.div
+          initial={{ opacity: 0, y: -8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+          className="flex items-start justify-between"
+        >
+          <div>
+            <h1 className="text-[32px] font-bold tracking-[-0.02em] text-foreground mb-1">
+              CMV Rankings
+            </h1>
+            <p className="text-sm text-foreground-secondary">
+              Commercial Market Value · Football · 964 athletes across 5 leagues
+            </p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+              <Download className="w-4 h-4" />
+              Export
+            </button>
+            <button className="flex items-center gap-2 px-3 py-2 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors">
+              <SlidersHorizontal className="w-4 h-4" />
+              Filter
+            </button>
+          </div>
+        </motion.div>
+
+        {/* KPI Row */}
+        <div className="grid grid-cols-4 gap-3">
+          <KpiCard
+            label="TOP CMV"
+            value="63"
+            sub="Lamine Yamal · Barcelona"
+            stripeColor="#00E5A0"
+            delay={0}
+          />
+          <KpiCard
+            label="TOP RISER 7D"
+            value="+3.4"
+            sub="Lamine Yamal"
+            stripeColor="#F04E6B"
+            delay={0.05}
+          />
+          <KpiCard
+            label="ELITE TIER"
+            value="12"
+            sub="CMV above 55"
+            stripeColor="#7C3AED"
+            delay={0.1}
+          />
+          <KpiCard
+            label="PLAYERS TRACKED"
+            value="964"
+            sub="Across 5 leagues"
+            stripeColor="#3B82F6"
+            delay={0.15}
+          />
+        </div>
+
+        {/* Weekly Movers */}
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.2 }}
+        >
+          <WeeklyMovers risers={weeklyMovers.risers} fallers={weeklyMovers.fallers} />
+        </motion.div>
+
+        {/* Filter Toolbar */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.25 }}
+          className="flex items-center justify-between flex-wrap gap-3"
+        >
+          {/* League Tabs */}
+          <LeagueTabs activeLeague={activeLeague} onLeagueChange={setActiveLeague} />
+
+          {/* Filter Chips */}
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors border border-transparent hover:border-[rgba(255,255,255,0.07)]">
+              Position
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors border border-transparent hover:border-[rgba(255,255,255,0.07)]">
+              CMV Range
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors border border-transparent hover:border-[rgba(255,255,255,0.07)]">
+              Sort: CMV Score
+              <ChevronDown className="w-3.5 h-3.5" />
+            </button>
+          </div>
         </motion.div>
 
         {/* Rankings Table */}
         <motion.div
-          variants={itemVariants}
-          className="bg-background-surface rounded-lg shadow-card overflow-hidden"
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
         >
-          {/* Table Header */}
-          <div className="grid grid-cols-[60px_1fr_120px_100px_140px_100px_80px_80px] gap-4 px-5 py-3 border-b border-[rgba(255,255,255,0.05)]">
-            <span className="label-tag text-foreground-tertiary">Rank</span>
-            <span className="label-tag text-foreground-tertiary">Player</span>
-            <span className="label-tag text-foreground-tertiary">Club</span>
-            <span className="label-tag text-foreground-tertiary">Position</span>
-            <span className="label-tag text-foreground-tertiary">Market Value</span>
-            <span className="label-tag text-foreground-tertiary">Tier</span>
-            <span className="label-tag text-foreground-tertiary">Score</span>
-            <span className="label-tag text-foreground-tertiary">Trend</span>
-          </div>
+          <RankingsTable players={filteredPlayers} />
+        </motion.div>
 
-          {/* Table Body */}
-          <div>
-            {mockPlayers.map((player, index) => (
-              <motion.div
-                key={player.id}
-                variants={itemVariants}
-                whileHover={{ backgroundColor: "rgba(255,255,255,0.03)" }}
-                className={cn(
-                  "grid grid-cols-[60px_1fr_120px_100px_140px_100px_80px_80px] gap-4 px-5 py-4 items-center cursor-pointer transition-colors duration-[120ms]",
-                  index !== mockPlayers.length - 1 && "border-b border-[rgba(255,255,255,0.05)]",
-                  player.rank === 1 && "shadow-glow-green"
-                )}
-              >
-                {/* Rank */}
-                <div className="flex items-center gap-2">
-                  <span
-                    className={cn(
-                      "font-mono font-semibold text-lg",
-                      player.rank === 1 ? "text-accent-primary" : "text-foreground"
-                    )}
-                  >
-                    {player.rank}
-                  </span>
-                  {player.rankChange !== 0 && (
-                    <DeltaIndicator value={player.rankChange} showIcon={false} className="text-xs" />
-                  )}
-                </div>
-
-                {/* Player */}
-                <div className="flex items-center gap-3">
-                  <PlayerAvatar name={player.name} size="sm" />
-                  <div>
-                    <p className="font-medium text-foreground">{player.name}</p>
-                    <p className="text-xs text-foreground-tertiary">{player.nationality}</p>
-                  </div>
-                </div>
-
-                {/* Club */}
-                <span className="text-sm text-foreground-secondary truncate">{player.club}</span>
-
-                {/* Position */}
-                <span className="font-mono text-sm text-foreground-secondary">{player.position}</span>
-
-                {/* Market Value */}
-                <div className="space-y-1">
-                  <span className="font-mono font-semibold text-foreground">
-                    €{player.marketValue}M
-                  </span>
-                  <ScoreBar value={player.marketValue} maxValue={200} delay={0.1 + index * 0.05} />
-                </div>
-
-                {/* Tier */}
-                <TierBadge tier={player.tier} />
-
-                {/* Score */}
-                <span
-                  className={cn(
-                    "font-mono font-semibold text-lg",
-                    player.rank === 1 ? "text-accent-primary" : "text-foreground"
-                  )}
-                >
-                  {player.overallScore}
-                </span>
-
-                {/* Trend */}
-                <Sparkline data={player.trendData} trend={player.trend} />
-              </motion.div>
-            ))}
+        {/* Pagination */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.35 }}
+          className="flex items-center justify-between"
+        >
+          <span className="text-sm text-foreground-secondary">
+            Showing 1–15 of 964
+          </span>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors border border-[rgba(255,255,255,0.07)]">
+              <ChevronLeft className="w-4 h-4" />
+              Prev
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm text-foreground-secondary hover:text-foreground hover:bg-[rgba(255,255,255,0.03)] transition-colors border border-[rgba(255,255,255,0.07)]">
+              Next
+              <ChevronRight className="w-4 h-4" />
+            </button>
           </div>
         </motion.div>
-      </motion.div>
+      </div>
     </AppShell>
   )
 }
