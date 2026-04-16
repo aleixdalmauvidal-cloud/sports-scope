@@ -418,7 +418,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                         <p className="text-xs text-[#6B7280]">Avg likes</p>
                         <p className="mt-1 text-white">
                           {socialDetail?.avg_likes != null
-                            ? formatInteger(socialDetail.avg_likes)
+                            ? formatFollowersCompact(socialDetail.avg_likes)
                             : "—"}
                         </p>
                       </div>
@@ -426,7 +426,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                         <p className="text-xs text-[#6B7280]">Avg comments</p>
                         <p className="mt-1 text-white">
                           {socialDetail?.avg_comments != null
-                            ? formatInteger(socialDetail.avg_comments)
+                            ? formatFollowersCompact(socialDetail.avg_comments)
                             : "—"}
                         </p>
                       </div>
@@ -440,7 +440,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                     </p>
                     <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
                     <p className="mt-1 text-xl font-semibold text-white">
-                      {social?.tt_followers != null
+                      {social?.tt_followers != null && social.tt_followers >= 10000
                         ? formatFollowersCompact(social.tt_followers)
                         : "—"}
                     </p>
