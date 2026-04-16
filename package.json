@@ -12,6 +12,7 @@
     "import:all": "npm run import:players && npm run sync:football",
     "calc:cmv": "npx tsx scripts/calculate-cmv.ts",
     "scrape:instagram": "npx tsx scripts/scrape-instagram.ts",
+    "scrape:tiktok": "npx tsx scripts/scrape-tiktok.ts",
     "analyze:brands": "npx tsx scripts/analyze-brand-fit.ts",
     "setup:all": "npm run import:players && npm run sync:football && npm run calc:cmv"
   },
