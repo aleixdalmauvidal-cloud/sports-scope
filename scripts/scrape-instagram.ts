@@ -8,7 +8,7 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 )
 
-const ACTOR_ID = 'dSCLg0C3YEZ83HzYX'
+const ACTOR_ID = 'shu8hvrXbJbY3Eb9W'
 
 function getHeaders() {
   return {
@@ -18,14 +18,20 @@ function getHeaders() {
 }
 
 async function runApifyActor(usernames: string[]) {
-  console.log(`🚀 Lanzando Apify para: ${usernames.join(', ')}`)
+  const uniqueUsernames = [...new Set(usernames)]
+  console.log(`🚀 Lanzando Apify para: ${uniqueUsernames.join(', ')}`)
 
   const runRes = await fetch(
     `https://api.apify.com/v2/acts/${ACTOR_ID}/runs`,
     {
       method: 'POST',
       headers: getHeaders(),
-      body: JSON.stringify({ usernames, resultsLimit: 1 }),
+      body: JSON.stringify({
+        directUrls: uniqueUsernames.map(u => `https://www.instagram.com/${u}/`),
+        resultsType: 'posts',
+        resultsLimit: 12,
+        addParentData: true,
+      }),
     }
   )
 
@@ -70,16 +76,39 @@ async function runApifyActor(usernames: string[]) {
   return await itemsRes.json()
 }
 
-async function saveToSupabase(athleteId: string, igData: any) {
+async function saveToSupabase(
+  athleteId: string,
+  posts: any[],
+  followers: number | null,
+) {
   const today = new Date().toISOString().split('T')[0]
-  const followers = igData.followersCount ?? null
-  const posts = igData.latestPosts ?? []
   const avgLikes = posts.length > 0
     ? Math.round(posts.reduce((acc: number, p: any) => acc + (p.likesCount ?? 0), 0) / posts.length)
     : null
   const avgComments = posts.length > 0
     ? Math.round(posts.reduce((acc: number, p: any) => acc + (p.commentsCount ?? 0), 0) / posts.length)
     : null
+
+  const viewCounts = posts
+    .map((p: any) => p.videoViewCount ?? p.videoPlayCount)
+    .filter((v: any) => typeof v === 'number' && Number.isFinite(v))
+  const avgViews = viewCounts.length > 0
+    ? Math.round(viewCounts.reduce((acc: number, v: number) => acc + v, 0) / viewCounts.length)
+    : null
+
+  const savesCounts = posts
+    .map((p: any) => p.savesCount)
+    .filter((v: any) => typeof v === 'number' && Number.isFinite(v))
+  const avgSaves = savesCounts.length > 0
+    ? Math.round(savesCounts.reduce((acc: number, v: number) => acc + v, 0) / savesCounts.length)
+    : null
+
+  const postingFrequency = posts.length > 0
+    ? parseFloat((posts.length / 30).toFixed(4))
+    : null
+
+  const followerGrowth30d =
+    null
   const engagementRate = followers && avgLikes
     ? parseFloat(((avgLikes / followers) * 100).toFixed(2))
     : null
@@ -92,6 +121,10 @@ async function saveToSupabase(athleteId: string, igData: any) {
       ig_followers: followers,
       avg_likes: avgLikes,
       avg_comments: avgComments,
+      avg_views: avgViews,
+      posting_frequency: postingFrequency,
+      follower_growth_30d: followerGrowth30d,
+      avg_saves: avgSaves,
       engagement_rate: engagementRate,
     }, { onConflict: 'athlete_id,date' })
 
@@ -117,17 +150,59 @@ async function main() {
 
   const batchSize = 10
   for (let i = 0; i < athletes.length; i += batchSize) {
-    const batch = athletes.slice(i, i + batchSize)
-    const usernames = batch.map(a => a.instagram_handle!)
-    const results = await runApifyActor(usernames)
+    const rawBatch = athletes.slice(i, i + batchSize)
+    const uniqueBatchByHandle = new Map<string, (typeof rawBatch)[number]>()
+    for (const a of rawBatch) {
+      const handle = a.instagram_handle?.toLowerCase()
+      if (!handle) continue
+      if (!uniqueBatchByHandle.has(handle)) uniqueBatchByHandle.set(handle, a)
+    }
+    const batch = [...uniqueBatchByHandle.values()]
+    const uniqueUsernames = [...new Set(batch.map(a => a.instagram_handle!))]
+    const results = await runApifyActor(uniqueUsernames)
     if (!results) continue
 
-    for (const igData of results) {
-      const athlete = batch.find(
-        a => a.instagram_handle?.toLowerCase() === igData.username?.toLowerCase()
-      )
-      if (!athlete) continue
-      await saveToSupabase(athlete.id, igData)
+    const postsByOwner = new Map<string, { posts: any[]; followersCount: number | null }>()
+
+    for (const post of results) {
+      const ownerUsername: string | undefined =
+        post.ownerUsername ??
+        post.owner?.username ??
+        post?.user?.username
+
+      if (!ownerUsername) continue
+
+      const key = ownerUsername.toLowerCase()
+
+      const followersFromPost: number | null =
+        post.ownerProfile?.followersCount ??
+        post.owner?.followersCount ??
+        post.followersCount ??
+        null
+
+      const existing = postsByOwner.get(key)
+      if (existing) {
+        existing.posts.push(post)
+        if (existing.followersCount == null && followersFromPost != null) {
+          existing.followersCount = followersFromPost
+        }
+      } else {
+        postsByOwner.set(key, {
+          posts: [post],
+          followersCount: followersFromPost,
+        })
+      }
+    }
+
+    for (const athlete of batch) {
+      const handle = athlete.instagram_handle
+      if (!handle) continue
+
+      const key = handle.toLowerCase()
+      const grouped = postsByOwner.get(key)
+      if (!grouped) continue
+
+      await saveToSupabase(athlete.id, grouped.posts, grouped.followersCount)
     }
   }
 
