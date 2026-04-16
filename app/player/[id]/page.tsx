@@ -52,6 +52,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
   const initials = player.name.split(" ").map((n) => n[0]).join("")
 
   const campaign = profile.campaign_signals
+  console.log("campaign_signals data:", profile?.campaign_signals)
   const brandFit = profile.brand_fit_detail
   const social = profile.social_metrics
   const socialDetail = profile.social_metrics_detail
@@ -117,15 +118,9 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     return val.toFixed(2)
   }
 
-  const brandVerticals: string[] =
-    (campaign?.brand_verticals ?? []).length === 0
-      ? ["sportswear", "lifestyle", "tech"]
-      : (campaign?.brand_verticals ?? []);
+  const brandVerticals: string[] = campaign?.brand_verticals ?? []
 
-  const detectedBrands: string[] =
-    (campaign?.brands_detected ?? []).length === 0
-      ? ["Sportswear", "Lifestyle"]
-      : (campaign?.brands_detected ?? []);
+  const detectedBrands: string[] = campaign?.brands_detected ?? []
 
   function calculateVerticalScore(vertical: string, verticals: string[]): number {
     const vset = new Set(verticals.map((v) => v.toLowerCase()))
@@ -320,24 +315,28 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                       Brand Verticals
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {brandVerticals.map((v) => {
-                        const key = v.toLowerCase()
-                        let color = "#6B7280"
-                        if (key === "sportswear") color = "#3B82F6"
-                        else if (key === "lifestyle") color = "#10B981"
-                        else if (key === "tech") color = "#8B5CF6"
-                        else if (key === "betting") color = "#F97316"
-                        else if (key === "luxury") color = "#FACC15"
-                        return (
-                          <span
-                            key={v}
-                            className="rounded-full bg-[#111827] px-3 py-1 text-xs font-medium"
-                            style={{ border: `1px solid ${color}55`, color }}
-                          >
-                            {v}
-                          </span>
-                        )
-                      })}
+                      {brandVerticals.length === 0 ? (
+                        <p className="text-sm text-[#6B7280]">No brand data available yet</p>
+                      ) : (
+                        brandVerticals.map((v) => {
+                          const key = v.toLowerCase()
+                          let color = "#6B7280"
+                          if (key === "sportswear") color = "#3B82F6"
+                          else if (key === "lifestyle") color = "#10B981"
+                          else if (key === "tech") color = "#8B5CF6"
+                          else if (key === "betting") color = "#F97316"
+                          else if (key === "luxury") color = "#FACC15"
+                          return (
+                            <span
+                              key={v}
+                              className="rounded-full bg-[#111827] px-3 py-1 text-xs font-medium"
+                              style={{ border: `1px solid ${color}55`, color }}
+                            >
+                              {v}
+                            </span>
+                          )
+                        })
+                      )}
                     </div>
                   </div>
                 </div>
@@ -348,14 +347,18 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                       Detected Brand Categories
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {detectedBrands.map((b) => (
-                        <span
-                          key={b}
-                          className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs text-[#E5E7EB]"
-                        >
-                          {b}
-                        </span>
-                      ))}
+                      {detectedBrands.length === 0 ? (
+                        <p className="text-sm text-[#6B7280]">No brand data available yet</p>
+                      ) : (
+                        detectedBrands.map((b) => (
+                          <span
+                            key={b}
+                            className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs text-[#E5E7EB]"
+                          >
+                            {b}
+                          </span>
+                        ))
+                      )}
                     </div>
                   </div>
 
@@ -393,9 +396,7 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
               Main Sponsors
             </p>
             {detectedBrands.length === 0 ? (
-              <div className="rounded-lg bg-[#12121A] p-4 text-sm text-[#9CA3AF]">
-                No brand partnerships detected yet
-              </div>
+              <p className="text-sm text-[#6B7280]">No brand data available yet</p>
             ) : (
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
                 {detectedBrands.map((b) => {
