@@ -230,6 +230,7 @@ export async function getTopPlayersByCmv(limit = 100): Promise<PlayerRow[]> {
   const { data, error } = await supabase
     .from("cmv_scores")
     .select(cmvSelectWithJoins)
+    .eq("athletes.is_active", true)
     .order("date", { ascending: false })
     .limit(CMV_RANKING_FETCH_CAP);
 
@@ -317,6 +318,7 @@ async function loadAllLatestCmvPlayerRows(): Promise<PlayerRow[]> {
     const { data, error } = await supabase
       .from("cmv_scores")
       .select(cmvSelectWithJoins)
+      .eq("athletes.is_active", true)
       .order("date", { ascending: false })
       .range(offset, offset + CMV_FULL_SCAN_BATCH - 1);
 
@@ -491,7 +493,8 @@ export async function getCmvDeltaLatestTwoForAthletes(
 
   const { data, error } = await supabase
     .from("cmv_scores")
-    .select("athlete_id, cmv_total, date")
+    .select("athlete_id, cmv_total, date, athletes!inner(is_active)")
+    .eq("athletes.is_active", true)
     .in("athlete_id", athleteIds);
 
   if (error) {
@@ -500,7 +503,12 @@ export async function getCmvDeltaLatestTwoForAthletes(
   }
 
   type Entry = { total: number; date: string };
-  type CmvDeltaRow = { athlete_id: string; cmv_total: unknown; date: unknown };
+  type CmvDeltaRow = {
+    athlete_id: string;
+    cmv_total: unknown;
+    date: unknown;
+    athletes?: { is_active: boolean } | null;
+  };
   const byId = new Map<string, Entry[]>();
   for (const row of (data ?? []) as CmvDeltaRow[]) {
     const id = row.athlete_id;
