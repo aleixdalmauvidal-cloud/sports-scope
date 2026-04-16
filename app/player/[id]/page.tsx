@@ -240,11 +240,13 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
           </div>
 
           {isAuthed ? (
-            <>
-              <PlayerProfileAnalysis player={player} profile={profile} />
+            <PlayerProfileAnalysis player={player} profile={profile} />
+          ) : (
+            <PlayerAnalysisLocked />
+          )}
 
-              {/* COMMERCIAL INTELLIGENCE */}
-              <section className="mt-10 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+          {/* COMMERCIAL INTELLIGENCE */}
+          <section className="mt-10 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
                   Commercial Intelligence
                 </p>
@@ -345,8 +347,8 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 </div>
               </section>
 
-              {/* BRAND FIT BREAKDOWN */}
-              <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+          {/* BRAND FIT BREAKDOWN */}
+          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
                   Brand Fit Breakdown
                 </p>
@@ -381,8 +383,8 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 </div>
               </section>
 
-              {/* SOCIAL MEDIA DEEP DIVE */}
-              <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+          {/* SOCIAL MEDIA DEEP DIVE */}
+          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
                   Social Media Deep Dive
                 </p>
@@ -488,8 +490,8 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                 </div>
               </section>
 
-              {/* SPORTS PERFORMANCE DETAIL */}
-              <section className="mt-8 mb-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+          {/* SPORTS PERFORMANCE DETAIL */}
+          <section className="mt-8 mb-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
                 <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
                   Sports Performance Detail
                 </p>
@@ -590,10 +592,6 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                   </div>
                 </div>
               </section>
-            </>
-          ) : (
-            <PlayerAnalysisLocked />
-          )}
         </div>
       </main>
     </div>
