@@ -5,6 +5,7 @@ import { Sidebar } from "@/components/sidebar"
 import { PlayerAnalysisLocked } from "@/components/player-analysis-locked"
 import { PlayerProfileAnalysis } from "@/components/player-profile-analysis"
 import { PlayerStatStrip } from "@/components/player-stat-strip"
+import { BrandVerticalRadar } from "@/components/BrandVerticalRadar"
 import { createServerSupabaseClient } from "@/lib/supabase/server"
 import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
 import { formatScore, formatFollowersCompact, formatPercentValue, formatInteger } from "@/lib/format"
@@ -125,6 +126,31 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
     (campaign?.brands_detected ?? []).length === 0
       ? ["Sportswear", "Lifestyle"]
       : (campaign?.brands_detected ?? []);
+
+  function calculateVerticalScore(vertical: string, verticals: string[]): number {
+    const vset = new Set(verticals.map((v) => v.toLowerCase()))
+    return vset.has(vertical.toLowerCase()) ? 80 : 40
+  }
+
+  const radarData = [
+    { vertical: "Sportswear", value: brandFit?.fit_sportswear ?? 0 },
+    { vertical: "Lifestyle", value: brandFit?.lifestyle_score ?? 0 },
+    { vertical: "Tech", value: calculateVerticalScore("tech", brandVerticals) },
+    { vertical: "Betting", value: brandFit?.fit_betting ?? 0 },
+    { vertical: "Luxury", value: calculateVerticalScore("luxury", brandVerticals) },
+    { vertical: "Nutrition", value: calculateVerticalScore("nutrition", brandVerticals) },
+  ]
+
+  function inferVerticalFromBrand(name: string): string {
+    const n = name.toLowerCase()
+    if (n.includes("nike") || n.includes("adidas") || n.includes("puma") || n.includes("under armour")) return "sportswear"
+    if (n.includes("apple") || n.includes("samsung") || n.includes("sony") || n.includes("google") || n.includes("meta")) return "tech"
+    if (n.includes("rolex") || n.includes("louis vuitton") || n.includes("gucci") || n.includes("prada") || n.includes("balenciaga")) return "luxury"
+    if (n.includes("bet") || n.includes("casino") || n.includes("poker") || n.includes("draftkings") || n.includes("bet365")) return "betting"
+    if (n.includes("protein") || n.includes("nutrition") || n.includes("gatorade") || n.includes("red bull") || n.includes("monster")) return "nutrition"
+    if (n.includes("travel") || n.includes("hotel") || n.includes("air")) return "lifestyle"
+    return "lifestyle"
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -350,6 +376,46 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                   </div>
                 </div>
               </section>
+
+          {/* BRAND VERTICAL RADAR */}
+          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
+              Brand Vertical Radar
+            </p>
+            <div className="rounded-lg bg-[#12121A] p-4">
+              <BrandVerticalRadar data={radarData} />
+            </div>
+          </section>
+
+          {/* MAIN SPONSORS */}
+          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
+            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
+              Main Sponsors
+            </p>
+            {detectedBrands.length === 0 ? (
+              <div className="rounded-lg bg-[#12121A] p-4 text-sm text-[#9CA3AF]">
+                No brand partnerships detected yet
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+                {detectedBrands.map((b) => {
+                  const v = inferVerticalFromBrand(b)
+                  return (
+                    <div
+                      key={b}
+                      className="rounded-lg border border-white/5 bg-[#12121A] p-3 transition hover:border-white/10 hover:bg-white/[0.03]"
+                    >
+                      <p className="text-sm font-semibold text-white">{b}</p>
+                      <p className="mt-1 text-xs uppercase tracking-wider text-[#6B7280]">
+                        {v}
+                      </p>
+                      <p className="mt-2 text-xs text-[#6B7280]">Detected</p>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+          </section>
 
           {/* BRAND FIT BREAKDOWN */}
           <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
