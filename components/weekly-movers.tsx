@@ -2,7 +2,10 @@
 
 import { useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import Image from "next/image"
+import Link from "next/link"
 import { ChevronDown, ChevronUp, TrendingUp, TrendingDown } from "lucide-react"
+import { getPlayerPhoto, mockPlayers } from "@/lib/mock-data"
 
 interface MoverPlayer {
   id: string
@@ -19,30 +22,29 @@ interface WeeklyMoversProps {
 
 function MoverCard({ player, type }: { player: MoverPlayer; type: "riser" | "faller" }) {
   const isRiser = type === "riser"
-  const bgColor = isRiser ? "rgba(0,229,160,0.06)" : "rgba(240,78,107,0.06)"
-  const borderColor = isRiser ? "rgba(0,229,160,0.12)" : "rgba(240,78,107,0.12)"
-  const deltaColor = isRiser ? "#00E5A0" : "#F04E6B"
-  const avatarBg = isRiser ? "bg-[rgba(0,229,160,0.2)]" : "bg-[rgba(240,78,107,0.2)]"
-  const avatarTextColor = isRiser ? "text-[#00E5A0]" : "text-[#F04E6B]"
+  const bgColor = isRiser ? "rgba(0,255,135,0.06)" : "rgba(240,78,107,0.06)"
+  const borderColor = isRiser ? "rgba(0,255,135,0.15)" : "rgba(240,78,107,0.15)"
+  const deltaColor = isRiser ? "#00FF87" : "#F04E6B"
+  const ringColor = isRiser ? "ring-[#00FF87]/40" : "ring-[#F04E6B]/40"
 
-  const initials = player.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
+  const full = mockPlayers.find((p) => p.id === player.id)
+  const photoSrc = getPlayerPhoto(full?.rank ?? player.id)
 
   return (
-    <div
-      className="flex items-center gap-3 p-3 rounded-lg"
+    <Link
+      href={`/player/${player.id}`}
+      className="flex items-center gap-3 p-3 rounded-lg hover:brightness-110 transition-all"
       style={{ backgroundColor: bgColor, border: `1px solid ${borderColor}` }}
     >
       {/* Avatar */}
-      <div
-        className={`w-9 h-9 rounded-full ${avatarBg} flex items-center justify-center`}
-      >
-        <span className={`font-mono text-xs font-semibold ${avatarTextColor}`}>
-          {initials}
-        </span>
+      <div className={`w-10 h-10 rounded-full overflow-hidden ring-2 ${ringColor} shrink-0`}>
+        <Image
+          src={photoSrc || "/placeholder.svg"}
+          alt={player.name}
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       {/* Info */}
@@ -59,7 +61,7 @@ function MoverCard({ player, type }: { player: MoverPlayer; type: "riser" | "fal
           {player.delta.toFixed(1)}
         </p>
       </div>
-    </div>
+    </Link>
   )
 }
 

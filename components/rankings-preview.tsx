@@ -1,10 +1,12 @@
 "use client"
 
 import Link from "next/link"
+import Image from "next/image"
 import { motion } from "framer-motion"
 import { ArrowRight } from "lucide-react"
 import { ScoreBar } from "./score-bar"
 import { DeltaIndicator } from "./delta-indicator"
+import { getPlayerPhoto } from "@/lib/mock-data"
 
 const previewPlayers = [
   {
@@ -100,9 +102,15 @@ export function RankingsPreview() {
 
           {/* Player */}
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-background-elevated flex items-center justify-center text-xs font-medium text-foreground-secondary">
-              {player.name.split(" ").map((n) => n[0]).join("")}
-            </div>
+                  <div className="w-10 h-10 rounded-full overflow-hidden bg-background-elevated ring-2 ring-border-default shrink-0">
+                    <Image
+                      src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+                      alt={player.name}
+                      width={40}
+                      height={40}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
             <div>
               <div className="font-medium text-foreground text-sm">{player.name}</div>
               <div className="text-xs text-foreground-tertiary">{player.position}</div>

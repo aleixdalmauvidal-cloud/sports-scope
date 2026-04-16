@@ -5,7 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Scale, Download, Bell, Plus, ChevronRight } from "lucide-react"
-import { mockPlayers } from "@/lib/mock-data"
+import { mockPlayers, getPlayerPhoto } from "@/lib/mock-data"
 import { Sidebar } from "@/components/sidebar"
 import { SubscoreCard } from "@/components/subscore-card"
 import { CMVChart } from "@/components/cmv-chart"
@@ -47,27 +47,44 @@ export default function PlayerProfilePage({ params }: { params: Promise<{ id: st
     <div className="min-h-screen bg-background">
       <Sidebar />
       <div className="ml-[220px] pb-20">
-        {/* Hero Card */}
+        {/* Hero Banner with big photo */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.3 }}
-          className="bg-surface-1 border-b border-border p-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative border-b border-border overflow-hidden"
         >
-          <div className="flex items-start gap-8">
-            {/* Left: Photo */}
-            <div className="relative">
+          {/* Blurred photo as background */}
+          <div className="absolute inset-0">
+            <Image
+              src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+              alt=""
+              fill
+              className="object-cover opacity-25 blur-2xl scale-110"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/80 to-background/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
+          </div>
+
+          <div className="relative flex items-center gap-8 p-8">
+            {/* Left: Big Photo */}
+            <div className="relative shrink-0">
               <div
-                className="w-20 h-20 rounded-full overflow-hidden border-[3px] border-accent-primary"
-                style={{ boxShadow: "0 0 24px rgba(0,229,160,0.2)" }}
+                className="w-40 h-40 rounded-2xl overflow-hidden border-[3px] border-accent-primary/60"
+                style={{ boxShadow: "0 0 60px rgba(0,255,135,0.25)" }}
               >
                 <Image
-                  src="https://media.api-sports.io/football/players/386828.png"
+                  src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
                   alt={player.name}
-                  width={80}
-                  height={80}
+                  width={160}
+                  height={160}
                   className="w-full h-full object-cover"
                 />
+              </div>
+              {/* Rank badge floating */}
+              <div className="absolute -bottom-2 -right-2 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-primary text-background font-mono text-sm font-bold shadow-lg">
+                #{player.rank}
               </div>
             </div>
 
@@ -85,11 +102,7 @@ export default function PlayerProfilePage({ params }: { params: Promise<{ id: st
                 {player.name}
               </h1>
 
-              <div className="flex items-center gap-3 mt-2 font-mono text-[13px] text-secondary">
-                <span className="px-2 py-0.5 rounded bg-accent-primary/15 text-accent-primary font-mono text-xs">
-                  #{player.rank}
-                </span>
-                <span className="text-tertiary">·</span>
+              <div className="flex items-center gap-3 mt-3 font-mono text-[13px] text-secondary flex-wrap">
                 <span
                   className={cn(
                     "px-2 py-0.5 rounded border font-mono text-xs",
@@ -99,7 +112,7 @@ export default function PlayerProfilePage({ params }: { params: Promise<{ id: st
                   {player.position}
                 </span>
                 <span className="text-tertiary">·</span>
-                <span>{player.club}</span>
+                <span className="text-primary font-semibold">{player.club}</span>
                 <span className="text-tertiary">·</span>
                 <span>{player.league}</span>
                 <span className="text-tertiary">·</span>

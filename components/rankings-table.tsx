@@ -2,9 +2,10 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
+import Image from "next/image"
 import { cn } from "@/lib/utils"
 import { PositionBadge } from "./position-badge"
-import { Sparkline } from "./sparkline"
+import { getPlayerPhoto } from "@/lib/mock-data"
 import type { Player } from "@/lib/mock-data"
 
 interface RankingsTableProps {
@@ -12,33 +13,31 @@ interface RankingsTableProps {
 }
 
 function PlayerAvatar({ player }: { player: Player }) {
-  const initials = player.name
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-
   // Color based on tier
   const ringColors: Record<string, string> = {
-    elite: "#00E5A0",
+    elite: "#00FF87",
     premium: "#3B82F6",
     mid: "#F59E0B",
     emerging: "#8B5CF6",
   }
   const ringColor = ringColors[player.tier] || "#4A5068"
 
-  // Status dot color (simplified - green for positive trend, red for negative)
-  const statusColor = player.delta7d > 0 ? "#00E5A0" : player.delta7d < 0 ? "#F04E6B" : "#4A5068"
+  // Status dot color (green for positive, red for negative)
+  const statusColor = player.delta7d > 0 ? "#00FF87" : player.delta7d < 0 ? "#F04E6B" : "#4A5068"
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       <div
-        className="w-9 h-9 rounded-full bg-[#161B27] flex items-center justify-center"
+        className="w-10 h-10 rounded-full bg-[#161B27] overflow-hidden"
         style={{ boxShadow: `0 0 0 2px ${ringColor}` }}
       >
-        <span className="font-mono text-xs font-medium text-foreground-secondary">
-          {initials}
-        </span>
+        <Image
+          src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+          alt={player.name}
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
       </div>
       {/* Status dot */}
       <div

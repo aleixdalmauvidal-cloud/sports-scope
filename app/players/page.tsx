@@ -7,9 +7,10 @@ import { AppShell } from "@/components/app-shell"
 import { PositionBadge } from "@/components/position-badge"
 import { TierBadge } from "@/components/tier-badge"
 import { ScoreBar } from "@/components/score-bar"
-import { mockPlayers, leagues, type Player, type League, type Position } from "@/lib/mock-data"
+import { mockPlayers, leagues, getPlayerPhoto, type Player, type League, type Position } from "@/lib/mock-data"
 import { Search, ChevronDown, LayoutGrid, LayoutList, ChevronLeft, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 
 const ITEMS_PER_PAGE = 50
 
@@ -71,23 +72,28 @@ function generateFullPlayerList(): Player[] {
 const allPlayers = generateFullPlayerList()
 
 function PlayerAvatar({ player }: { player: Player }) {
-  const initials = player.name.split(" ").map((n) => n[0]).join("").slice(0, 2)
   const ringColors: Record<string, string> = {
-    elite: "#00E5A0",
+    elite: "#00FF87",
     premium: "#3B82F6",
     mid: "#F59E0B",
     emerging: "#8B5CF6",
   }
   const ringColor = ringColors[player.tier] || "#4A5068"
-  const statusColor = player.delta7d > 0 ? "#00E5A0" : player.delta7d < 0 ? "#F04E6B" : "#4A5068"
+  const statusColor = player.delta7d > 0 ? "#00FF87" : player.delta7d < 0 ? "#F04E6B" : "#4A5068"
 
   return (
-    <div className="relative">
+    <div className="relative shrink-0">
       <div
-        className="w-9 h-9 rounded-full bg-[#161B27] flex items-center justify-center"
+        className="w-10 h-10 rounded-full bg-[#161B27] overflow-hidden"
         style={{ boxShadow: `0 0 0 2px ${ringColor}` }}
       >
-        <span className="font-mono text-xs font-medium text-foreground-secondary">{initials}</span>
+        <Image
+          src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+          alt={player.name}
+          width={40}
+          height={40}
+          className="w-full h-full object-cover"
+        />
       </div>
       <div
         className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-2 border-[#0F1117]"
@@ -404,15 +410,19 @@ export default function PlayersPage() {
                     {/* Center: avatar + name */}
                     <div className="flex flex-col items-center text-center mb-4">
                       <div
-                        className="w-12 h-12 rounded-full bg-[#161B27] flex items-center justify-center mb-3"
-                        style={{ boxShadow: `0 0 0 2px ${player.tier === "elite" ? "#00E5A0" : player.tier === "premium" ? "#3B82F6" : player.tier === "mid" ? "#F59E0B" : "#8B5CF6"}` }}
+                        className="w-16 h-16 rounded-full bg-[#161B27] overflow-hidden mb-3"
+                        style={{ boxShadow: `0 0 0 2px ${player.tier === "elite" ? "#00FF87" : player.tier === "premium" ? "#3B82F6" : player.tier === "mid" ? "#F59E0B" : "#8B5CF6"}` }}
                       >
-                        <span className="font-mono text-sm font-medium text-foreground-secondary">
-                          {player.name.split(" ").map((n) => n[0]).join("").slice(0, 2)}
-                        </span>
+                        <Image
+                          src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+                          alt={player.name}
+                          width={64}
+                          height={64}
+                          className="w-full h-full object-cover"
+                        />
                       </div>
                       <p className="text-base font-semibold text-foreground">{player.name}</p>
-                      <p className="text-xs text-foreground-secondary">{player.club}</p>
+                      <p className="text-xs text-foreground-secondary mb-2">{player.club}</p>
                       <PositionBadge position={player.position} />
                     </div>
 

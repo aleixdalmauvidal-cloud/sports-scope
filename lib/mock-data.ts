@@ -1,7 +1,8 @@
 export type PlayerTier = "elite" | "premium" | "mid" | "emerging"
 export type Position = "FW" | "MF" | "DF" | "GK"
 
-// Map each player (by rank) to a local hero image generated in /public/players
+// Map each player to a local photo matching their club colors & appearance.
+// Photos are stored at /public/players/rank-{N}.jpg for ranks 1-15.
 export function getPlayerPhoto(rankOrId: number | string): string {
   let rank: number
   if (typeof rankOrId === "string") {
@@ -10,9 +11,8 @@ export function getPlayerPhoto(rankOrId: number | string): string {
   } else {
     rank = rankOrId
   }
-  // Cycle through the 8 generated photos based on rank
-  const photoNumber = ((rank - 1) % 8) + 1
-  return `/players/player-${photoNumber}.jpg`
+  const photoNumber = ((rank - 1) % 15) + 1
+  return `/players/rank-${photoNumber}.jpg`
 }
 
 export interface Player {

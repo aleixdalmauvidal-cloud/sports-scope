@@ -3,9 +3,10 @@
 import { useState, useRef, useEffect } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AppShell } from "@/components/app-shell"
-import { mockPlayers, type Player } from "@/lib/mock-data"
+import { mockPlayers, getPlayerPhoto, type Player } from "@/lib/mock-data"
 import { Plus, X, Check, ExternalLink, Link2, Star, Search } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Image from "next/image"
 import {
   RadarChart,
   PolarGrid,
@@ -125,10 +126,16 @@ function PlayerSlot({ player, onSelect, onRemove, colorIndex, allPlayers, select
         </button>
         <div className="flex items-center gap-3">
           <div
-            className="w-10 h-10 rounded-full bg-background-elevated flex items-center justify-center text-sm font-semibold"
-            style={{ color: playerColors[colorIndex] }}
+            className="w-12 h-12 rounded-full overflow-hidden bg-background-elevated shrink-0"
+            style={{ boxShadow: `0 0 0 2px ${playerColors[colorIndex]}` }}
           >
-            {player.name.split(" ").map((n) => n[0]).join("")}
+            <Image
+              src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+              alt={player.name}
+              width={48}
+              height={48}
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold text-foreground truncate">{player.name}</p>
@@ -185,8 +192,14 @@ function PlayerSlot({ player, onSelect, onRemove, colorIndex, allPlayers, select
                   }}
                   className="w-full flex items-center gap-3 px-3 py-2 hover:bg-background-surface transition-colors text-left"
                 >
-                  <div className="w-8 h-8 rounded-full bg-background-surface flex items-center justify-center text-xs font-semibold text-foreground-secondary">
-                    {p.name.split(" ").map((n) => n[0]).join("")}
+                  <div className="w-9 h-9 rounded-full overflow-hidden bg-background-surface shrink-0">
+                    <Image
+                      src={getPlayerPhoto(p.rank) || "/placeholder.svg"}
+                      alt={p.name}
+                      width={36}
+                      height={36}
+                      className="w-full h-full object-cover"
+                    />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{p.name}</p>
@@ -334,12 +347,18 @@ export default function ComparePage() {
                     </th>
                     {activePlayers.map((player, idx) => (
                       <th key={player.id} className="px-4 py-3 text-center min-w-[140px]">
-                        <div className="flex flex-col items-center gap-1">
+                        <div className="flex flex-col items-center gap-1.5">
                           <div
-                            className="w-8 h-8 rounded-full bg-background-elevated flex items-center justify-center text-xs font-semibold"
-                            style={{ color: playerColors[idx] }}
+                            className="w-12 h-12 rounded-full overflow-hidden bg-background-elevated"
+                            style={{ boxShadow: `0 0 0 2px ${playerColors[idx]}` }}
                           >
-                            {player.name.split(" ").map((n) => n[0]).join("")}
+                            <Image
+                              src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+                              alt={player.name}
+                              width={48}
+                              height={48}
+                              className="w-full h-full object-cover"
+                            />
                           </div>
                           <span className="text-sm font-semibold text-foreground">{player.name}</span>
                           <span className="font-mono text-lg font-bold" style={{ color: playerColors[idx] }}>
