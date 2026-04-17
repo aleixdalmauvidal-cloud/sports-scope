@@ -523,6 +523,40 @@ export default async function PlayerPage({ params }: PlayerPageProps) {
                     </div>
                   </div>
 
+                  {/* X (Twitter) */}
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      X (Twitter)
+                    </p>
+                    <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {(social as any)?.x_followers != null && (social as any).x_followers >= 10000
+                        ? formatFollowersCompact((social as any).x_followers)
+                        : "—"}
+                    </p>
+                  </div>
+
+                  {/* YouTube */}
+                  <div className="rounded-lg bg-[#12121A] p-4">
+                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
+                      YouTube
+                    </p>
+                    <p className="mt-2 text-sm text-[#9CA3AF]">Subscribers</p>
+                    <p className="mt-1 text-xl font-semibold text-white">
+                      {(social as any)?.yt_subscribers != null && (social as any).yt_subscribers >= 1000
+                        ? formatFollowersCompact((social as any).yt_subscribers)
+                        : "—"}
+                    </p>
+                    <div className="mt-3">
+                      <p className="text-xs text-[#6B7280]">Avg views</p>
+                      <p className="mt-1 text-sm font-semibold text-white">
+                        {(social as any)?.yt_avg_views != null
+                          ? formatInteger((social as any).yt_avg_views)
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+
                   {/* Content */}
                   <div className="rounded-lg bg-[#12121A] p-4">
                     <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
