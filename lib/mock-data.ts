@@ -1,8 +1,28 @@
 export type PlayerTier = "elite" | "premium" | "mid" | "emerging"
 export type Position = "FW" | "MF" | "DF" | "GK"
 
-// Map each player to a local photo matching their club colors & appearance.
-// Photos are stored at /public/players/rank-{N}.jpg for ranks 1-15.
+// Real player photos sourced from Wikipedia Commons (CC BY-SA).
+// Each index matches the player's rank (1-15). We serve them directly from
+// upload.wikimedia.org — next.config has images.unoptimized=true so no
+// remote-patterns config is required.
+const PLAYER_PHOTOS: Record<number, string> = {
+  1: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Lamine_Yamal_in_2025.jpg", // Lamine Yamal
+  2: "https://upload.wikimedia.org/wikipedia/commons/c/c6/2023_05_06_Final_de_la_Copa_del_Rey_-_52879242230_%28cropped%29.jpg", // Vinicius Jr
+  3: "https://upload.wikimedia.org/wikipedia/commons/4/4a/Mohamed_Salah_2018.jpg", // Mohamed Salah
+  4: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Raphael_Dias_Belloli_2023.jpg", // Raphinha
+  5: "https://upload.wikimedia.org/wikipedia/commons/7/71/Erling_Haaland_June_2025.jpg", // Erling Haaland
+  6: "https://upload.wikimedia.org/wikipedia/commons/1/13/Pedri.jpg", // Pedri
+  7: "https://upload.wikimedia.org/wikipedia/commons/1/15/Nico_Williams_%28cropped%29.jpg", // Nico Williams
+  8: "https://upload.wikimedia.org/wikipedia/commons/2/26/2019147183134_2019-05-27_Fussball_1.FC_Kaiserslautern_vs_FC_Bayern_M%C3%BCnchen_-_Sven_-_1D_X_MK_II_-_0228_-_B70I8527_%28cropped%29.jpg", // Lewandowski
+  9: "https://upload.wikimedia.org/wikipedia/commons/5/53/2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg", // Phil Foden
+  10: "https://upload.wikimedia.org/wikipedia/commons/7/73/Federico_Valverde_2021_%28cropped%29.jpg", // Federico Valverde
+  11: "https://upload.wikimedia.org/wikipedia/commons/6/6e/FRA-ARG_%2810%29_%28cropped%29.jpg", // Antoine Griezmann
+  12: "https://upload.wikimedia.org/wikipedia/commons/f/f9/25th_Laureus_World_Sports_Awards_-_Red_Carpet_-_Jude_Bellingham_-_240422_190551-2_%28cropped%29.jpg", // Jude Bellingham
+  13: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Viktor_Gy%C3%B6keres_2018.jpg", // Viktor Gyökeres
+  14: "https://upload.wikimedia.org/wikipedia/commons/6/66/Picture_with_Mbapp%C3%A9_%28cropped_and_rotated%29.jpg", // Kylian Mbappé
+  15: "https://upload.wikimedia.org/wikipedia/commons/7/74/Bryan_Mbeumo_2018.jpg", // Bryan Mbeumo
+}
+
 export function getPlayerPhoto(rankOrId: number | string): string {
   let rank: number
   if (typeof rankOrId === "string") {
@@ -11,8 +31,8 @@ export function getPlayerPhoto(rankOrId: number | string): string {
   } else {
     rank = rankOrId
   }
-  const photoNumber = ((rank - 1) % 15) + 1
-  return `/players/rank-${photoNumber}.jpg`
+  const photoKey = ((rank - 1) % 15) + 1
+  return PLAYER_PHOTOS[photoKey]
 }
 
 export interface Player {
