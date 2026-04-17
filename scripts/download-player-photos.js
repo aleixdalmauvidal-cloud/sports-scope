@@ -1,122 +1,78 @@
-// Downloads real photos of each footballer from Wikipedia REST API.
-// Uses delays + exponential backoff to handle 429 rate limits.
-
-import { mkdir, writeFile } from "node:fs/promises"
+// Download real player photos directly from upload.wikimedia.org.
+// URLs were pre-resolved from the Wikipedia summary API in a prior run,
+// so we skip the summary step to avoid rate limits.
+import { writeFile, mkdir } from "node:fs/promises"
 import { resolve, join } from "node:path"
 
 const PLAYERS = [
-  { rank: 1, title: "Lamine_Yamal" },
-  { rank: 2, title: "Vin%C3%ADcius_J%C3%BAnior" },
-  { rank: 3, title: "Mohamed_Salah" },
-  { rank: 4, title: "Raphinha" },
-  { rank: 5, title: "Erling_Haaland" },
-  { rank: 6, title: "Pedri" },
-  {
-    rank: 7,
-    title: "Nico_Williams_(footballer,_born_2002)",
-    fallback: "https://upload.wikimedia.org/wikipedia/commons/6/6d/Nico_Williams_2023.jpg",
-  },
-  { rank: 8, title: "Robert_Lewandowski" },
-  { rank: 9, title: "Phil_Foden" },
-  { rank: 10, title: "Federico_Valverde" },
-  { rank: 11, title: "Antoine_Griezmann" },
-  { rank: 12, title: "Jude_Bellingham" },
-  { rank: 13, title: "Viktor_Gy%C3%B6keres" },
-  { rank: 14, title: "Kylian_Mbapp%C3%A9" },
-  { rank: 15, title: "Bryan_Mbeumo" },
+  { rank: 1, name: "Lamine Yamal", url: "https://upload.wikimedia.org/wikipedia/commons/e/e3/Lamine_Yamal_in_2025.jpg" },
+  { rank: 2, name: "Vinicius Junior", url: "https://upload.wikimedia.org/wikipedia/commons/c/c6/2023_05_06_Final_de_la_Copa_del_Rey_-_52879242230_%28cropped%29.jpg" },
+  { rank: 3, name: "Mohamed Salah", url: "https://upload.wikimedia.org/wikipedia/commons/4/4a/Mohamed_Salah_2018.jpg" },
+  { rank: 4, name: "Raphinha", url: "https://upload.wikimedia.org/wikipedia/commons/5/5e/Raphael_Dias_Belloli_2023.jpg" },
+  { rank: 5, name: "Erling Haaland", url: "https://upload.wikimedia.org/wikipedia/commons/7/71/Erling_Haaland_June_2025.jpg" },
+  { rank: 6, name: "Pedri", url: "https://upload.wikimedia.org/wikipedia/commons/1/13/Pedri.jpg" },
+  { rank: 7, name: "Nico Williams", url: "https://upload.wikimedia.org/wikipedia/commons/6/66/Nico_Williams_%28cropped%29.jpg" },
+  { rank: 8, name: "Robert Lewandowski", url: "https://upload.wikimedia.org/wikipedia/commons/2/26/2019147183134_2019-05-27_Fussball_1.FC_Kaiserslautern_vs_FC_Bayern_M%C3%BCnchen_-_Sven_-_1D_X_MK_II_-_0228_-_B70I8527_%28cropped%29.jpg" },
+  { rank: 9, name: "Phil Foden", url: "https://upload.wikimedia.org/wikipedia/commons/5/53/2023-10-04_Fu%C3%9Fball%2C_M%C3%A4nner%2C_UEFA_Champions_League%2C_RB_Leipzig_-_Manchester_City_FC_1DX_2613%2C_Phil_Foden.jpg" },
+  { rank: 10, name: "Federico Valverde", url: "https://upload.wikimedia.org/wikipedia/commons/7/73/Federico_Valverde_2021_%28cropped%29.jpg" },
+  { rank: 11, name: "Antoine Griezmann", url: "https://upload.wikimedia.org/wikipedia/commons/6/6e/FRA-ARG_%2810%29_%28cropped%29.jpg" },
+  { rank: 12, name: "Jude Bellingham", url: "https://upload.wikimedia.org/wikipedia/commons/f/f9/25th_Laureus_World_Sports_Awards_-_Red_Carpet_-_Jude_Bellingham_-_240422_190551-2_%28cropped%29.jpg" },
+  { rank: 13, name: "Viktor Gyokeres", url: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Viktor_Gy%C3%B6keres_2018.jpg" },
+  { rank: 14, name: "Kylian Mbappe", url: "https://upload.wikimedia.org/wikipedia/commons/6/66/Picture_with_Mbapp%C3%A9_%28cropped_and_rotated%29.jpg" },
+  { rank: 15, name: "Bryan Mbeumo", url: "https://upload.wikimedia.org/wikipedia/commons/7/74/Bryan_Mbeumo_2018.jpg" },
 ]
 
 const OUT_DIR = resolve(process.cwd(), "public", "players")
-const UA = "SportsScope/1.0 player-photo-downloader"
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-async function fetchWithRetry(url, label, maxRetries = 5) {
-  for (let attempt = 0; attempt < maxRetries; attempt++) {
-    try {
-      const res = await fetch(url, {
-        headers: { "user-agent": UA, accept: "application/json,image/*,*/*" },
-      })
-      if (res.ok) return res
-      if (res.status === 429 || res.status === 503) {
-        const wait = 4000 * Math.pow(2, attempt)
-        console.log(`[v0] ${res.status} on ${label} — retry ${attempt + 1}/${maxRetries} in ${Math.round(wait / 1000)}s`)
-        await sleep(wait)
-        continue
-      }
-      throw new Error(`${label}: HTTP ${res.status}`)
-    } catch (err) {
-      if (attempt === maxRetries - 1) throw err
-      await sleep(2000)
-    }
-  }
-  throw new Error(`${label}: retries exhausted`)
-}
-
-async function getImageUrl(title) {
-  const url = `https://en.wikipedia.org/api/rest_v1/page/summary/${title}`
-  const res = await fetchWithRetry(url, `summary ${title}`)
-  const data = await res.json()
-  const src = data.originalimage?.source || data.thumbnail?.source
-  if (!src) throw new Error(`No image field for ${title}`)
-  return src
-}
-
-async function downloadImage(url, outPath) {
-  const res = await fetchWithRetry(url, `image ${url.split("/").pop()}`)
-  const buf = Buffer.from(await res.arrayBuffer())
-  await writeFile(outPath, buf)
-  return buf.length
-}
-
-async function processPlayer(p) {
-  const outPath = join(OUT_DIR, `rank-${p.rank}.jpg`)
-  let src
+async function download(player, attempt = 1) {
+  const dest = join(OUT_DIR, `rank-${player.rank}.jpg`)
   try {
-    src = await getImageUrl(p.title)
-  } catch (err) {
-    if (p.fallback) {
-      console.log(`[v0] rank-${p.rank} summary failed, using fallback`)
-      src = p.fallback
-    } else {
-      throw err
+    const res = await fetch(player.url, {
+      headers: {
+        "user-agent": "SportsScopeDemo/1.0 (https://sports-scope.vercel.app)",
+        accept: "image/jpeg,image/*;q=0.9",
+      },
+    })
+    if (res.status === 429 && attempt <= 5) {
+      const wait = 5000 * attempt
+      console.log(`[v0] rank-${player.rank} ${player.name} 429 — retry ${attempt}/5 in ${wait}ms`)
+      await sleep(wait)
+      return download(player, attempt + 1)
     }
+    if (!res.ok) {
+      console.log(`[v0] rank-${player.rank} ${player.name} FAIL HTTP ${res.status}`)
+      return false
+    }
+    const buf = Buffer.from(await res.arrayBuffer())
+    await writeFile(dest, buf)
+    console.log(`[v0] rank-${player.rank} ${player.name} OK (${buf.length} bytes)`)
+    return true
+  } catch (err) {
+    console.log(`[v0] rank-${player.rank} ${player.name} ERROR ${err.message}`)
+    return false
   }
-  const bytes = await downloadImage(src, outPath)
-  return { src, bytes }
 }
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
   const failed = []
-
   for (const p of PLAYERS) {
-    try {
-      const { src, bytes } = await processPlayer(p)
-      console.log(`[v0] rank-${p.rank} ${decodeURIComponent(p.title)} OK (${bytes} bytes) ${src}`)
-    } catch (err) {
-      console.log(`[v0] rank-${p.rank} ${decodeURIComponent(p.title)} FAILED: ${err.message}`)
-      failed.push(p)
-    }
-    await sleep(2000)
+    const ok = await download(p)
+    if (!ok) failed.push(p)
+    await sleep(1200) // polite spacing
   }
-
-  if (failed.length > 0) {
-    console.log(`\n[v0] Retrying ${failed.length} failed players after 15s pause...`)
-    await sleep(15000)
+  const okCount = PLAYERS.length - failed.length
+  console.log(`\n[v0] First pass: ${okCount}/${PLAYERS.length}`)
+  if (failed.length) {
+    console.log(`[v0] Retrying ${failed.length} failed after 10s`)
+    await sleep(10000)
     for (const p of failed) {
-      try {
-        const { bytes } = await processPlayer(p)
-        console.log(`[v0] RETRY rank-${p.rank} OK (${bytes} bytes)`)
-      } catch (err) {
-        console.log(`[v0] RETRY rank-${p.rank} STILL FAILED: ${err.message}`)
-      }
-      await sleep(3000)
+      await download(p)
+      await sleep(2000)
     }
   }
+  console.log("[v0] DONE")
 }
 
-main().catch((e) => {
-  console.error("[v0] fatal error:", e.message)
-  process.exit(1)
-})
+main()
