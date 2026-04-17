@@ -15,6 +15,8 @@
     "scrape:tiktok": "npx tsx scripts/scrape-tiktok.ts",
     "scrape:x": "npx tsx scripts/scrape-x.ts",
     "scrape:youtube": "npx tsx scripts/scrape-youtube.ts",
+    "scrape:wikipedia": "npx tsx scripts/scrape-wikipedia.ts",
+    "scrape:news": "npx tsx scripts/scrape-news.ts",
     "analyze:brands": "npx tsx scripts/analyze-brand-fit.ts",
     "pipeline:daily": "npx tsx scripts/daily-pipeline.ts",
     "setup:all": "npm run import:players && npm run sync:football && npm run calc:cmv"

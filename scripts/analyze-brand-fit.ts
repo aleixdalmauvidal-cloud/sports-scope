@@ -106,6 +106,8 @@ function buildPrompt(args: {
   ig_followers: number | null;
   engagement_rate: number | null;
   captions: string[];
+  newsHeadlines: string[];
+  wikipediaSponsors: string[];
 }): string {
   const {
     name,
@@ -114,9 +116,15 @@ function buildPrompt(args: {
     ig_followers,
     engagement_rate,
     captions,
+    newsHeadlines,
+    wikipediaSponsors,
   } = args;
   const captionsList =
     captions.length > 0 ? captions.map((c, i) => `- (${i + 1}) ${c}`).join("\n") : "—";
+  const newsList =
+    newsHeadlines.length > 0 ? newsHeadlines.map((h, i) => `- (${i + 1}) ${h}`).join("\n") : "—";
+  const wikiList =
+    wikipediaSponsors.length > 0 ? wikipediaSponsors.join(", ") : "—";
   return `You are a sports marketing analyst specialized in brand detection.
 
 Athlete: ${name}
@@ -128,7 +136,13 @@ Engagement rate: ${engagement_rate ?? "—"}%
 Recent Instagram post captions:
 ${captionsList}
 
-Based on the captions above AND your knowledge of this athlete's known sponsorships and brand deals, identify:
+Recent news headlines about this athlete's brand deals:
+${newsList}
+
+Known sponsors from Wikipedia:
+${wikiList}
+
+Based on ALL the sources above (captions, news headlines, Wikipedia data) AND your knowledge of this athlete's sponsorships, identify:
 
 Return ONLY valid JSON:
 {
@@ -218,6 +232,17 @@ async function main(): Promise<void> {
     const engagementRate = social?.engagement_rate ?? null;
     const captions = normalizeStringArray(social?.latest_post_captions ?? []).slice(0, 5);
 
+    const { data: existingSignals } = await supabase
+      .from("campaign_signals")
+      .select("news_headlines, wikipedia_sponsors")
+      .eq("athlete_id", athlete.id)
+      .order("date", { ascending: false })
+      .limit(1)
+      .single();
+
+    const newsHeadlines = normalizeStringArray((existingSignals as any)?.news_headlines ?? []).slice(0, 8);
+    const wikipediaSponsors = normalizeStringArray((existingSignals as any)?.wikipedia_sponsors ?? []).slice(0, 10);
+
     const prompt = buildPrompt({
       name: athlete.name,
       club: athlete.clubs?.name ?? null,
@@ -225,6 +250,8 @@ async function main(): Promise<void> {
       ig_followers: igFollowers,
       engagement_rate: engagementRate,
       captions,
+      newsHeadlines,
+      wikipediaSponsors,
     });
 
     process.stdout.write(`[analyze:brands] ${athlete.name}… `);
@@ -247,6 +274,11 @@ async function main(): Promise<void> {
         brand_safety_score: brandSafetyScore,
         unique_brands_count: uniqueCount(brandsDetected),
         campaign_types: campaignTypes,
+        data_sources: [
+          ...(captions.length > 0 ? ["instagram"] : []),
+          ...(newsHeadlines.length > 0 ? ["news"] : []),
+          ...(wikipediaSponsors.length > 0 ? ["wikipedia"] : []),
+        ],
       } as any;
 
       const { error: csErr } = await supabase
