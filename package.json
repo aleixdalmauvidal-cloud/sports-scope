@@ -19,6 +19,8 @@
     "scrape:news": "npx tsx scripts/scrape-news.ts",
     "analyze:brands": "npx tsx scripts/analyze-brand-fit.ts",
     "pipeline:daily": "npx tsx scripts/daily-pipeline.ts",
+    "agent:sponsors": "npx tsx scripts/agent-sponsor-discovery.ts",
+    "agent:valuation": "npx tsx scripts/agent-sponsor-valuation.ts",
     "pipeline:weekly": "npx tsx scripts/weekly-pipeline.ts",
     "setup:all": "npm run import:players && npm run sync:football && npm run calc:cmv"
   },
