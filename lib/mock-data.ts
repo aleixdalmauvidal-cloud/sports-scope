@@ -46,14 +46,14 @@ export const mockPlayers: Player[] = [
     club: "Barcelona",
     league: "LaLiga",
     position: "MF",
-    age: 17,
-    cmvScore: 63,
+    age: 18,
+    cmvScore: 82,
     sportsScore: 86,
     socialScore: 88,
-    oppScore: 47,
+    oppScore: 84,
     delta7d: 3.4,
     tier: "elite",
-    trendData: [54, 56, 58, 60, 61, 63],
+    trendData: [68, 72, 75, 78, 80, 82],
     trend: "up",
     imageId: 1073665,
   },
@@ -368,3 +368,261 @@ export const mockStats: StatCard[] = [
 
 export const leagues = ["All", "LaLiga", "Premier League", "Ligue 1", "Bundesliga", "Serie A"] as const
 export type League = (typeof leagues)[number]
+
+// ============================================================
+// DETAILED PLAYER PROFILE DATA
+// ============================================================
+
+export interface PlayerProfile {
+  marketValue: string | null
+  commercial: {
+    brandedPostsPerMonth: number | null
+    sponsorshipDensity: string | null
+    brandVerticals: string[]
+    detectedCategories: string[]
+    recommendedCampaigns: string[]
+    mainSponsors: string[]
+    brandFit: {
+      lifestyleAppeal: number | null
+      sportswearFit: number | null
+      bettingFit: number | null
+      brandSafety: number | null
+    }
+  }
+  social: {
+    instagram: {
+      followers: string | null
+      engagementRate: string | null
+      engagementLabel: string | null
+      avgLikes: string | null
+      avgComments: string | null
+    }
+    tiktok: {
+      followers: string | null
+      avgViews: string | null
+    }
+    x: { followers: string | null }
+    youtube: { subscribers: string | null; avgViews: string | null }
+  }
+  content: {
+    postingFrequency: string | null
+    avgVideoViews: string | null
+  }
+  audienceQuality: "Elite" | "Excellent" | "Above average" | "Good" | null
+  sports: {
+    goals: number
+    assists: number
+    apps: number
+    minutes: number
+    formRating: number
+    passAccuracy: number
+    goalsPer90: number
+    assistsPer90: number
+    season: string
+  }
+}
+
+// Manually curated profiles for top players to match real stats
+const playerProfiles: Record<string, Partial<PlayerProfile>> = {
+  // Lamine Yamal
+  "a1000000-0000-0000-0000-000000000006": {
+    marketValue: null,
+    social: {
+      instagram: {
+        followers: "41.5M",
+        engagementRate: "10.7%",
+        engagementLabel: "Above average",
+        avgLikes: "4.4M",
+        avgComments: "64.5K",
+      },
+      tiktok: { followers: "38.3M", avgViews: null },
+      x: { followers: null },
+      youtube: { subscribers: null, avgViews: null },
+    },
+    content: { postingFrequency: "0.37 posts/day", avgVideoViews: "7,630,061" },
+    audienceQuality: "Elite",
+    sports: {
+      goals: 15,
+      assists: 11,
+      apps: 27,
+      minutes: 2224,
+      formRating: 7.94,
+      passAccuracy: 80.0,
+      goalsPer90: 0.61,
+      assistsPer90: 0.45,
+      season: "2025/26",
+    },
+  },
+  // Vinicius Jr
+  "a1000000-0000-0000-0000-000000000002": {
+    marketValue: "€180M",
+    social: {
+      instagram: {
+        followers: "56.8M",
+        engagementRate: "8.4%",
+        engagementLabel: "Excellent",
+        avgLikes: "3.2M",
+        avgComments: "48.1K",
+      },
+      tiktok: { followers: "24.1M", avgViews: "12.4M" },
+      x: { followers: "9.2M" },
+      youtube: { subscribers: "1.8M", avgViews: "420K" },
+    },
+    content: { postingFrequency: "0.48 posts/day", avgVideoViews: "9,241,320" },
+    audienceQuality: "Elite",
+    sports: {
+      goals: 18,
+      assists: 9,
+      apps: 29,
+      minutes: 2480,
+      formRating: 7.82,
+      passAccuracy: 78.3,
+      goalsPer90: 0.65,
+      assistsPer90: 0.33,
+      season: "2025/26",
+    },
+    commercial: {
+      brandedPostsPerMonth: 3.2,
+      sponsorshipDensity: "High",
+      brandVerticals: ["Sportswear", "Lifestyle", "Automotive"],
+      detectedCategories: ["Nike", "Pepsi", "Red Bull"],
+      recommendedCampaigns: ["Social Activation", "Influencer Campaign", "Product Launch"],
+      mainSponsors: ["Nike", "Pepsi", "EA Sports"],
+      brandFit: { lifestyleAppeal: 92, sportswearFit: 95, bettingFit: 41, brandSafety: 78 },
+    },
+  },
+  // Salah
+  "a1000000-0000-0000-0000-000000000023": {
+    marketValue: "€55M",
+    social: {
+      instagram: {
+        followers: "68.4M",
+        engagementRate: "4.2%",
+        engagementLabel: "Good",
+        avgLikes: "2.8M",
+        avgComments: "32.4K",
+      },
+      tiktok: { followers: "15.2M", avgViews: "8.1M" },
+      x: { followers: "18.6M" },
+      youtube: { subscribers: "2.4M", avgViews: "680K" },
+    },
+    content: { postingFrequency: "0.42 posts/day", avgVideoViews: "5,120,480" },
+    audienceQuality: "Excellent",
+    sports: {
+      goals: 21,
+      assists: 14,
+      apps: 31,
+      minutes: 2710,
+      formRating: 8.12,
+      passAccuracy: 82.7,
+      goalsPer90: 0.70,
+      assistsPer90: 0.46,
+      season: "2025/26",
+    },
+  },
+  // Haaland
+  "a1000000-0000-0000-0000-000000000019": {
+    marketValue: "€200M",
+    social: {
+      instagram: {
+        followers: "38.2M",
+        engagementRate: "9.1%",
+        engagementLabel: "Excellent",
+        avgLikes: "2.9M",
+        avgComments: "41.2K",
+      },
+      tiktok: { followers: "12.8M", avgViews: "6.4M" },
+      x: { followers: "4.1M" },
+      youtube: { subscribers: "1.2M", avgViews: "340K" },
+    },
+    content: { postingFrequency: "0.31 posts/day", avgVideoViews: "4,820,150" },
+    audienceQuality: "Elite",
+    sports: {
+      goals: 28,
+      assists: 6,
+      apps: 30,
+      minutes: 2580,
+      formRating: 8.34,
+      passAccuracy: 71.2,
+      goalsPer90: 0.98,
+      assistsPer90: 0.21,
+      season: "2025/26",
+    },
+  },
+}
+
+// Generate reasonable defaults for any player based on their scores
+export function getPlayerProfile(player: Player): PlayerProfile {
+  const override = playerProfiles[player.id] || {}
+
+  // Derive sensible defaults from scores
+  const socialK = Math.round((player.socialScore / 100) * 80 + 5) // 5M to 85M followers
+  const sportsFactor = player.sportsScore / 100
+  const commercialFactor = player.oppScore / 100
+
+  const defaultProfile: PlayerProfile = {
+    marketValue: null,
+    commercial: {
+      brandedPostsPerMonth: player.oppScore > 60 ? Math.round(commercialFactor * 40) / 10 : null,
+      sponsorshipDensity: player.oppScore > 70 ? "High" : player.oppScore > 50 ? "Medium" : null,
+      brandVerticals: [],
+      detectedCategories: [],
+      recommendedCampaigns: ["Social Activation", "Influencer Campaign"],
+      mainSponsors: [],
+      brandFit: {
+        lifestyleAppeal: null,
+        sportswearFit: null,
+        bettingFit: null,
+        brandSafety: null,
+      },
+    },
+    social: {
+      instagram: {
+        followers: `${socialK.toFixed(1)}M`,
+        engagementRate: `${(4 + (player.socialScore / 100) * 8).toFixed(1)}%`,
+        engagementLabel: player.socialScore > 80 ? "Excellent" : player.socialScore > 60 ? "Above average" : "Good",
+        avgLikes: `${(socialK * 0.08).toFixed(1)}M`,
+        avgComments: `${Math.round(socialK * 1.5)}K`,
+      },
+      tiktok: {
+        followers: player.socialScore > 50 ? `${(socialK * 0.6).toFixed(1)}M` : null,
+        avgViews: player.socialScore > 70 ? `${(socialK * 0.15).toFixed(1)}M` : null,
+      },
+      x: { followers: player.socialScore > 60 ? `${(socialK * 0.2).toFixed(1)}M` : null },
+      youtube: {
+        subscribers: player.socialScore > 70 ? `${(socialK * 0.04).toFixed(1)}M` : null,
+        avgViews: player.socialScore > 70 ? `${Math.round(socialK * 10)}K` : null,
+      },
+    },
+    content: {
+      postingFrequency: `${(0.2 + (player.socialScore / 100) * 0.4).toFixed(2)} posts/day`,
+      avgVideoViews: (Math.round(socialK * 180000)).toLocaleString("en-US"),
+    },
+    audienceQuality: player.socialScore > 85 ? "Elite" : player.socialScore > 70 ? "Excellent" : player.socialScore > 55 ? "Above average" : "Good",
+    sports: {
+      goals: Math.round(sportsFactor * 22),
+      assists: Math.round(sportsFactor * 14),
+      apps: Math.round(24 + sportsFactor * 8),
+      minutes: Math.round(1800 + sportsFactor * 900),
+      formRating: Math.round((5.5 + sportsFactor * 3.2) * 100) / 100,
+      passAccuracy: Math.round((65 + sportsFactor * 20) * 10) / 10,
+      goalsPer90: Math.round(sportsFactor * 90) / 100,
+      assistsPer90: Math.round(sportsFactor * 55) / 100,
+      season: "2025/26",
+    },
+  }
+
+  return {
+    ...defaultProfile,
+    ...override,
+    commercial: { ...defaultProfile.commercial, ...(override.commercial || {}) },
+    social: {
+      instagram: { ...defaultProfile.social.instagram, ...(override.social?.instagram || {}) },
+      tiktok: { ...defaultProfile.social.tiktok, ...(override.social?.tiktok || {}) },
+      x: { ...defaultProfile.social.x, ...(override.social?.x || {}) },
+      youtube: { ...defaultProfile.social.youtube, ...(override.social?.youtube || {}) },
+    },
+    content: { ...defaultProfile.content, ...(override.content || {}) },
+    sports: { ...defaultProfile.sports, ...(override.sports || {}) },
+  }
+}
