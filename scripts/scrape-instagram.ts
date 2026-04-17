@@ -76,6 +76,27 @@ async function runApifyActor(usernames: string[]) {
   return await itemsRes.json()
 }
 
+async function getFollowersMonthAgo(athleteId: string): Promise<number | null> {
+  const today = new Date()
+  const from = new Date(today)
+  from.setDate(from.getDate() - 35)
+  const to = new Date(today)
+  to.setDate(to.getDate() - 25)
+
+  const { data } = await supabase
+    .from('social_metrics')
+    .select('ig_followers')
+    .eq('athlete_id', athleteId)
+    .gte('date', from.toISOString().split('T')[0])
+    .lte('date', to.toISOString().split('T')[0])
+    .not('ig_followers', 'is', null)
+    .order('date', { ascending: false })
+    .limit(1)
+    .single()
+
+  return data?.ig_followers ?? null
+}
+
 async function saveToSupabase(
   athleteId: string,
   posts: any[],
@@ -111,8 +132,11 @@ async function saveToSupabase(
     ? parseFloat((posts.length / 30).toFixed(4))
     : null
 
+  const previousFollowers = await getFollowersMonthAgo(athleteId)
   const followerGrowth30d =
-    null
+    (previousFollowers != null && followers != null)
+      ? followers - previousFollowers
+      : null
   const engagementRate = followers && avgLikes
     ? parseFloat(((avgLikes / followers) * 100).toFixed(2))
     : null
