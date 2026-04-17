@@ -1,6 +1,5 @@
-// Download real player photos directly from upload.wikimedia.org.
-// URLs were pre-resolved from the Wikipedia summary API in a prior run,
-// so we skip the summary step to avoid rate limits.
+// Download real player photos from Wikipedia Commons in parallel with a
+// small stagger so the sandbox finishes within its time budget.
 import { writeFile, mkdir } from "node:fs/promises"
 import { resolve, join } from "node:path"
 
@@ -25,53 +24,53 @@ const PLAYERS = [
 const OUT_DIR = resolve(process.cwd(), "public", "players")
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-async function download(player, attempt = 1) {
+async function download(player) {
   const dest = join(OUT_DIR, `rank-${player.rank}.jpg`)
   try {
     const res = await fetch(player.url, {
       headers: {
-        "user-agent": "SportsScopeDemo/1.0 (https://sports-scope.vercel.app)",
-        accept: "image/jpeg,image/*;q=0.9",
+        "user-agent": "SportsScopeDemo/1.0 (contact@sports-scope.vercel.app)",
+        accept: "image/jpeg,image/png,image/*;q=0.9",
       },
     })
-    if (res.status === 429 && attempt <= 5) {
-      const wait = 5000 * attempt
-      console.log(`[v0] rank-${player.rank} ${player.name} 429 — retry ${attempt}/5 in ${wait}ms`)
-      await sleep(wait)
-      return download(player, attempt + 1)
-    }
     if (!res.ok) {
       console.log(`[v0] rank-${player.rank} ${player.name} FAIL HTTP ${res.status}`)
-      return false
+      return { ok: false, player, status: res.status }
     }
     const buf = Buffer.from(await res.arrayBuffer())
     await writeFile(dest, buf)
-    console.log(`[v0] rank-${player.rank} ${player.name} OK (${buf.length} bytes)`)
-    return true
+    console.log(`[v0] rank-${player.rank} ${player.name} OK (${(buf.length / 1024).toFixed(0)} KB)`)
+    return { ok: true, player }
   } catch (err) {
     console.log(`[v0] rank-${player.rank} ${player.name} ERROR ${err.message}`)
-    return false
+    return { ok: false, player, error: err.message }
   }
 }
 
 async function main() {
   await mkdir(OUT_DIR, { recursive: true })
-  const failed = []
-  for (const p of PLAYERS) {
-    const ok = await download(p)
-    if (!ok) failed.push(p)
-    await sleep(1200) // polite spacing
-  }
-  const okCount = PLAYERS.length - failed.length
-  console.log(`\n[v0] First pass: ${okCount}/${PLAYERS.length}`)
+
+  // Launch all downloads in parallel with 150ms stagger between starts.
+  const results = await Promise.all(
+    PLAYERS.map(async (p, i) => {
+      await sleep(i * 150)
+      return download(p)
+    })
+  )
+
+  const okCount = results.filter((r) => r.ok).length
+  const failed = results.filter((r) => !r.ok)
+  console.log(`\n[v0] First pass: ${okCount}/${PLAYERS.length} succeeded`)
+
+  // Retry failed ones sequentially with 3s delay between each.
   if (failed.length) {
-    console.log(`[v0] Retrying ${failed.length} failed after 10s`)
-    await sleep(10000)
-    for (const p of failed) {
-      await download(p)
-      await sleep(2000)
+    console.log(`[v0] Retrying ${failed.length} failed downloads...`)
+    for (const f of failed) {
+      await sleep(3000)
+      await download(f.player)
     }
   }
+
   console.log("[v0] DONE")
 }
 
