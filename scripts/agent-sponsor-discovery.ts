@@ -141,14 +141,28 @@ async function main() {
   for (const athlete of athletes as any[]) {
     process.stdout.write(`[sponsor-discovery] ${athlete.name}… `);
     try {
-      await new Promise(r => setTimeout(r, 5000));
+      await new Promise(r => setTimeout(r, 15000));
 
-      const result = await discoverSponsors({
-        id: athlete.id,
-        name: athlete.name,
-        club: athlete.clubs?.name ?? null,
-        league: athlete.clubs?.league ?? null,
-      });
+      let result = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          result = await discoverSponsors({
+            id: athlete.id,
+            name: athlete.name,
+            club: athlete.clubs?.name ?? null,
+            league: athlete.clubs?.league ?? null,
+          });
+          break;
+        } catch (e: any) {
+          if (attempt < 3 && e?.message?.includes("rate_limit")) {
+            console.log(`⏳ rate limit, waiting 30s before retry ${attempt + 1}/3…`);
+            await new Promise(r => setTimeout(r, 30000));
+          } else {
+            throw e;
+          }
+        }
+      }
+      if (!result) throw new Error("All retries failed");
 
       await saveToSupabase(athlete.id, result);
 

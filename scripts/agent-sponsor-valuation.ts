@@ -211,25 +211,39 @@ async function main() {
   for (const athlete of athletes as any[]) {
     process.stdout.write(`[sponsor-valuation] ${athlete.name}… `);
     try {
-      await new Promise(r => setTimeout(r, 8000));
+      await new Promise(r => setTimeout(r, 15000));
 
       const cmv = latestCmv.get(athlete.id);
       const social = latestSocial.get(athlete.id);
       const campaign = latestCampaign.get(athlete.id);
 
-      const result = await valuateAthlete({
-        id: athlete.id,
-        name: athlete.name,
-        club: athlete.clubs?.name ?? null,
-        league: athlete.clubs?.league ?? null,
-        ig_followers: social?.ig_followers ?? null,
-        tt_followers: social?.tt_followers ?? null,
-        engagement_rate: social?.engagement_rate ?? null,
-        cmv_total: cmv?.cmv_total ?? null,
-        sports_score: cmv?.sports_score ?? null,
-        social_score: cmv?.social_score ?? null,
-        brands_detected: campaign?.brands_detected ?? null,
-      });
+      let result = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          result = await valuateAthlete({
+            id: athlete.id,
+            name: athlete.name,
+            club: athlete.clubs?.name ?? null,
+            league: athlete.clubs?.league ?? null,
+            ig_followers: social?.ig_followers ?? null,
+            tt_followers: social?.tt_followers ?? null,
+            engagement_rate: social?.engagement_rate ?? null,
+            cmv_total: cmv?.cmv_total ?? null,
+            sports_score: cmv?.sports_score ?? null,
+            social_score: cmv?.social_score ?? null,
+            brands_detected: campaign?.brands_detected ?? null,
+          });
+          break;
+        } catch (e: any) {
+          if (attempt < 3 && e?.message?.includes("rate_limit")) {
+            console.log(`⏳ rate limit, waiting 30s before retry ${attempt + 1}/3…`);
+            await new Promise(r => setTimeout(r, 30000));
+          } else {
+            throw e;
+          }
+        }
+      }
+      if (!result) throw new Error("All retries failed");
 
       await saveToSupabase(athlete.id, result);
 
