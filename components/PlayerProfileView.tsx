@@ -101,36 +101,54 @@ export function PlayerProfileView({ profile }: Props) {
 
       <section>
         <SectionTitle>Presencia social</SectionTitle>
-        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+        <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           <StatCard
-            label="Seguidores Instagram"
+            label="Instagram"
             value={formatFollowersCompact(soc?.ig_followers ?? null)}
+            sub={soc?.engagement_rate != null ? `${soc.engagement_rate}% engagement` : undefined}
           />
           <StatCard
-            label="Seguidores TikTok"
+            label="TikTok"
             value={formatFollowersCompact(soc?.tt_followers ?? null)}
+            sub={soc?.tt_avg_views != null ? `${formatCompactNumber(soc.tt_avg_views)} avg views` : undefined}
           />
           <StatCard
-            label="Engagement rate"
-            value={formatPercentValue(soc?.engagement_rate ?? null)}
+            label="X (Twitter)"
+            value={formatFollowersCompact((soc as any)?.x_followers ?? null)}
           />
+          <StatCard
+            label="YouTube"
+            value={formatFollowersCompact((soc as any)?.yt_subscribers ?? null)}
+            sub={(soc as any)?.yt_avg_views != null ? `${formatCompactNumber((soc as any).yt_avg_views)} avg views` : undefined}
+          />
+        </div>
+
+        <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             label="Avg views / post"
-            value={formatCompactNumber(soc?.avg_views_per_post ?? null)}
+            value={formatCompactNumber(soc?.avg_views_per_post ?? (soc as any)?.avg_views ?? null)}
           />
           <StatCard
             label="Crecimiento followers 30d"
             value={formatFollowerGrowthAbsolute(soc?.followers_growth_30d ?? null)}
             sub="Seguidores nuevos (30 días)"
           />
+          <StatCard
+            label="Avg likes / post"
+            value={formatCompactNumber((soc as any)?.avg_likes ?? null)}
+          />
         </div>
       </section>
 
       <section className="rounded-2xl border border-white/[0.12] bg-gradient-to-b from-accent/[0.08] to-transparent p-8 sm:p-10 lg:p-12">
         <SectionTitle>CMV desglose</SectionTitle>
-        <div className="mt-10 space-y-12">
+        <div className="mt-10 space-y-8">
           <ScoreBar label="Sports score" value={profile.sports_score} />
           <ScoreBar label="Social score" value={profile.social_score} />
+          <ScoreBar label="Commercial score" value={profile.commercial_score} />
+          <ScoreBar label="Brand fit score" value={profile.brand_fit_score} />
+          <ScoreBar label="Momentum score" value={profile.momentum_score} />
+          <ScoreBar label="Adjustment score" value={profile.adjustment_score} />
           <div className="border-t border-white/[0.12] pt-12">
             <p className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-accent-muted">
               CMV total
