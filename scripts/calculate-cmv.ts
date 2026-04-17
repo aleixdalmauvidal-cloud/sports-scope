@@ -189,15 +189,17 @@ function computeAdjustmentScore(s: SocialRow | undefined): number {
 
   const ig = Number(s?.ig_followers ?? 0);
 
-  // Single platform risk: sin TikTok o muy poco
-  const ttRaw = s?.tt_followers;
-  const tt =
-    ttRaw != null && Number.isFinite(Number(ttRaw))
-      ? Number(ttRaw)
-      : null;
-  if (tt == null || tt < 10_000) {
-    score -= 8;
-  }
+  // Platform diversity — penalize only if athlete has very few platforms
+  // NOTE: when X and YouTube are added, include them in platformCount array
+  const igPresent = ig > 1_000;
+  const ttFollowers = s?.tt_followers;
+  const ttPresent =
+    ttFollowers != null &&
+    Number.isFinite(Number(ttFollowers)) &&
+    Number(ttFollowers) > 1_000;
+  const platformCount = [igPresent, ttPresent].filter(Boolean).length;
+  if (platformCount === 0) score -= 15;
+  else if (platformCount === 1) score -= 5;
 
   // Inactividad: posting_frequency bajo o nulo
   const pfRaw = (s as any)?.posting_frequency ?? null;
