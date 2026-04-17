@@ -32,6 +32,8 @@ export type AthleteRow = {
   club_id: string;
   age?: number | null;
   photo_url?: string | null;
+  x_handle?: string | null;
+  yt_handle?: string | null;
   /** API-Football player id (import + sync shortcut) */
   api_football_player_id?: number | null;
   status?: string | null;
@@ -82,6 +84,11 @@ export type SocialMetricsRow = {
   date?: string | null;
   ig_followers?: number | null;
   tt_followers?: number | null;
+  x_followers?: number | null;
+  x_growth_30d?: number | null;
+  yt_subscribers?: number | null;
+  yt_avg_views?: number | null;
+  yt_growth_30d?: number | null;
   engagement_rate?: number | null;
   avg_likes?: number | null;
   avg_comments?: number | null;
@@ -135,6 +142,9 @@ export type PlayerProfile = {
     avg_views?: number | null;
     posting_frequency?: number | null;
     tt_avg_views?: number | null;
+    x_followers?: number | null;
+    yt_subscribers?: number | null;
+    yt_avg_views?: number | null;
   } | null;
 };
 
@@ -165,7 +175,11 @@ export type Database = {
     Tables: {
       athletes: {
         Row: AthleteRow;
-        Insert: Omit<AthleteRow, "id"> & { id?: string };
+        Insert: Omit<AthleteRow, "id"> & {
+          id?: string;
+          x_handle?: string | null;
+          yt_handle?: string | null;
+        };
         Update: Partial<AthleteRow>;
       };
       clubs: {
@@ -211,6 +225,9 @@ export type Database = {
         Insert: Omit<SocialMetricsRow, never> & {
           athlete_id: string;
           avg_views?: number | null;
+          x_followers?: number | null;
+          yt_subscribers?: number | null;
+          yt_avg_views?: number | null;
         };
         Update: Partial<SocialMetricsRow>;
       };
