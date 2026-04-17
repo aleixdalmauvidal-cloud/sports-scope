@@ -1,25 +1,24 @@
+"use client"
+
+import { motion } from "framer-motion"
+
 interface ScoreBarProps {
-  label: string
   value: number
+  maxValue?: number
+  delay?: number
 }
 
-export function ScoreBar({ label, value }: ScoreBarProps) {
+export function ScoreBar({ value, maxValue = 100, delay = 0.2 }: ScoreBarProps) {
+  const percentage = Math.min((value / maxValue) * 100, 100)
+
   return (
-    <div className="flex flex-col gap-3">
-      <div className="flex items-center justify-between">
-        <span className="text-zinc-500 text-xs uppercase tracking-widest">
-          {label}
-        </span>
-        <span className="text-white text-sm font-light tabular-nums">
-          {value}
-        </span>
-      </div>
-      <div className="h-1 bg-zinc-900 rounded-full overflow-hidden">
-        <div 
-          className="h-full bg-[#00ff87] rounded-full transition-all duration-700 ease-out"
-          style={{ width: `${value}%` }}
-        />
-      </div>
+    <div className="w-full h-[2px] rounded-full bg-[rgba(255,255,255,0.08)]">
+      <motion.div
+        className="h-full rounded-full bg-accent-primary"
+        initial={{ width: 0 }}
+        animate={{ width: `${percentage}%` }}
+        transition={{ duration: 0.6, delay, ease: "easeOut" }}
+      />
     </div>
   )
 }

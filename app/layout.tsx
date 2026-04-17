@@ -1,27 +1,21 @@
-import type { Metadata, Viewport } from 'next'
-import { Inter, Outfit } from 'next/font/google'
+import type { Metadata } from 'next'
+import { Geist, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const inter = Inter({ 
-  subsets: ["latin"],
-  variable: '--font-inter',
-  weight: ['300', '400', '500', '600']
-});
-const outfit = Outfit({
-  subsets: ["latin"],
-  variable: "--font-outfit",
-  weight: ["500", "600", "700", "800"],
-});
+const geistSans = Geist({
+  subsets: ['latin'],
+  variable: '--font-geist-sans',
+})
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-geist-mono',
+})
 
 export const metadata: Metadata = {
-  title: 'Sports Scope | CMV Ranking',
-  description: 'Commercial value index for elite footballers. Premium sports data platform.',
-  generator: 'v0.app',
-}
-
-export const viewport: Viewport = {
-  themeColor: '#0D1110',
+  title: 'SportsScope | Football Commercial Intelligence',
+  description: 'Premium football commercial intelligence platform for data-driven decisions',
 }
 
 export default function RootLayout({
@@ -30,8 +24,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${inter.variable} ${outfit.variable} font-sans antialiased bg-background text-foreground`}>
+    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body className="font-sans antialiased bg-[#08090E]">
         {children}
         {process.env.NODE_ENV === 'production' && <Analytics />}
       </body>

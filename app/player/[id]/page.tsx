@@ -1,706 +1,340 @@
-import { notFound } from "next/navigation"
+"use client"
+
+import { use } from "react"
+import Image from "next/image"
 import Link from "next/link"
-import { ArrowLeft, ArrowLeftRight, TrendingUp, TrendingDown } from "lucide-react"
+import { motion } from "framer-motion"
+import {
+  Scale,
+  Download,
+  Bell,
+  Plus,
+  ChevronRight,
+  TrendingUp,
+  TrendingDown,
+  Eye,
+} from "lucide-react"
+import { mockPlayers, getPlayerPhoto, getPlayerProfile } from "@/lib/mock-data"
 import { Sidebar } from "@/components/sidebar"
-import { PlayerAnalysisLocked } from "@/components/player-analysis-locked"
-import { PlayerProfileAnalysis } from "@/components/player-profile-analysis"
-import { PlayerStatStrip } from "@/components/player-stat-strip"
-import { BrandVerticalRadar } from "@/components/BrandVerticalRadar"
-import { createServerSupabaseClient } from "@/lib/supabase/server"
-import { getPlayerProfile, mapPlayerProfileToV0Player, opportunityScoreAccent } from "@/lib/players"
-import { formatScore, formatFollowersCompact, formatPercentValue, formatInteger } from "@/lib/format"
+import { SubscoreCard } from "@/components/subscore-card"
+import { CMVChart } from "@/components/cmv-chart"
+import { CommercialSection } from "@/components/commercial-section"
+import { SocialSection } from "@/components/social-section"
+import { SportsSection } from "@/components/sports-section"
+import { AnimatedNumber } from "@/components/animated-number"
+import { cn } from "@/lib/utils"
 
-export const dynamic = "force-dynamic"
-
-interface PlayerPageProps {
-  params: Promise<{ id: string }>
+const positionColors: Record<string, string> = {
+  FW: "bg-orange-500/15 text-orange-400 border-orange-500/20",
+  MF: "bg-blue-500/15 text-blue-400 border-blue-500/20",
+  DF: "bg-emerald-500/15 text-emerald-400 border-emerald-500/20",
+  GK: "bg-amber-500/15 text-amber-400 border-amber-500/20",
 }
 
-export async function generateMetadata({ params }: PlayerPageProps) {
-  const { id } = await params
-  const profile = await getPlayerProfile(id)
+export default function PlayerProfilePage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params)
+  const player = mockPlayers.find((p) => p.id === resolvedParams.id)
 
-  if (!profile) {
-    return { title: "Player Not Found | Sports Scope" }
+  if (!player) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-secondary">Player not found</div>
+      </div>
+    )
   }
 
-  return {
-    title: `${profile.name} | CMV ${formatScore(profile.cmv_total)} | Sports Scope`,
-    description: `${profile.name} commercial market value profile. CMV Score: ${formatScore(profile.cmv_total)}/100. ${profile.club} | ${profile.position}`,
-  }
-}
+  const profile = getPlayerProfile(player)
 
-export default async function PlayerPage({ params }: PlayerPageProps) {
-  const { id } = await params
-  const profile = await getPlayerProfile(id)
-
-  if (!profile) {
-    notFound()
-  }
-
-  let isAuthed = false
-  try {
-    const supabase = await createServerSupabaseClient()
-    const { data } = await supabase.auth.getUser()
-    isAuthed = !!data.user
-  } catch {
-    isAuthed = false
-  }
-
-  const player = mapPlayerProfileToV0Player(profile)
-
-  const isPositiveChange = player.weeklyChange >= 0
-  const rankWatermark = profile.cmv_rank ?? player.rank
-  const initials = player.name.split(" ").map((n) => n[0]).join("")
-
-  const campaign = profile.campaign_signals
-  console.log("campaign_signals data:", profile?.campaign_signals)
-  const brandFit = profile.brand_fit_detail
-  const social = profile.social_metrics
-  const socialDetail = profile.social_metrics_detail
-  const sports = profile.sports_metrics
-
-  const display = (v: unknown): string => (v === null || v === undefined ? "—" : String(v))
-
-  const barColor = (v: number | null | undefined): string => {
-    if (v == null) return "bg-[#4B5563]"
-    if (v > 70) return "bg-[#00ff87]"
-    if (v >= 50) return "bg-[#FACC15]"
-    return "bg-[#F97373]"
-  }
-
-  const safePercent = (v: number | null | undefined): string =>
-    v == null ? "—" : `${v.toFixed(1)}%`
-
-  const toNumber = (v: unknown): number | null => {
-    if (v === null || v === undefined || v === "") return null
-    const n = Number(v)
-    return Number.isFinite(n) ? n : null
-  }
-
-  const igFollowersNum = social?.ig_followers ?? null
-  const engagementNum = social?.engagement_rate ?? null
-  const lifestyleScore = brandFit?.lifestyle_score ?? null
-  const fitSportswear = brandFit?.fit_sportswear ?? null
-  const fitBetting = brandFit?.fit_betting ?? null
-  const brandSafety = brandFit?.brand_safety_score ?? null
-
-  const recommendedCampaigns: string[] = []
-  if (lifestyleScore != null && lifestyleScore > 70) recommendedCampaigns.push("Brand Ambassador")
-  if (igFollowersNum != null && igFollowersNum > 10_000_000) recommendedCampaigns.push("Social Activation")
-  if (engagementNum != null && engagementNum > 5) recommendedCampaigns.push("Influencer Campaign")
-  if (fitSportswear != null && fitSportswear > 80) recommendedCampaigns.push("Product Launch")
-  if (brandSafety != null && brandSafety > 85) recommendedCampaigns.push("Premium Partnership")
-
-  const uniqueRecommended = Array.from(new Set(recommendedCampaigns)).slice(0, 3)
-
-  const audienceQuality = (() => {
-    if (engagementNum == null) return "—"
-    if (engagementNum > 8) return "Elite"
-    if (engagementNum > 5) return "High"
-    if (engagementNum > 2) return "Average"
-    return "Low"
-  })()
-
-  const leagueBenchmarkLabel =
-    engagementNum != null && engagementNum > 5 ? "Above average" : engagementNum != null ? "Average" : "—"
-
-  const goals = sports?.goals ?? null
-  const assists = sports?.assists ?? null
-  const minutes = sports?.minutes_played ?? null
-  const matches = sports?.matches_played ?? null
-  const rating = sports?.rating ?? null
-  const passAccuracy = sports?.pass_accuracy ?? null
-
-  const per90 = (stat: number | null | undefined, min: number | null | undefined): string => {
-    if (stat == null || min == null || !Number.isFinite(Number(stat)) || !Number.isFinite(Number(min)) || min <= 0) {
-      return "—"
-    }
-    const val = (Number(stat) / Number(min)) * 90
-    return val.toFixed(2)
-  }
-
-  const brandVerticals: string[] = campaign?.brand_verticals ?? []
-
-  const detectedBrands: string[] = campaign?.brands_detected ?? []
-
-  function calculateVerticalScore(vertical: string, verticals: string[]): number {
-    const vset = new Set(verticals.map((v) => v.toLowerCase()))
-    return vset.has(vertical.toLowerCase()) ? 80 : 40
-  }
-
-  const radarData = [
-    { vertical: "Sportswear", value: brandFit?.fit_sportswear ?? 0 },
-    { vertical: "Lifestyle", value: brandFit?.lifestyle_score ?? 0 },
-    { vertical: "Tech", value: calculateVerticalScore("tech", brandVerticals) },
-    { vertical: "Betting", value: brandFit?.fit_betting ?? 0 },
-    { vertical: "Luxury", value: calculateVerticalScore("luxury", brandVerticals) },
-    { vertical: "Nutrition", value: calculateVerticalScore("nutrition", brandVerticals) },
+  // CMV breakdown derived from player's scores
+  const subscores = [
+    { label: "SPORTS", score: player.sportsScore, weight: 25, color: "green" as const },
+    { label: "SOCIAL", score: player.socialScore, weight: 30, color: "green" as const },
+    {
+      label: "COMMERCIAL",
+      score: Math.round(player.oppScore * 0.6),
+      weight: 15,
+      color: "blue" as const,
+    },
+    {
+      label: "BRAND FIT",
+      score: Math.round(player.oppScore * 0.4),
+      weight: 10,
+      color: "blue" as const,
+    },
+    {
+      label: "MOMENTUM",
+      score: Math.max(0, Math.min(100, 50 + Math.round(player.delta7d * 8))),
+      weight: 10,
+      color: "momentum" as const,
+      isPositive: player.delta7d >= 0,
+    },
+    {
+      label: "ADJUSTMENTS",
+      score: Math.round((player.sportsScore + player.socialScore) / 2.5),
+      weight: 10,
+      color: "green" as const,
+    },
   ]
 
-  function inferVerticalFromBrand(name: string): string {
-    const n = name.toLowerCase()
-    if (n.includes("nike") || n.includes("adidas") || n.includes("puma") || n.includes("under armour")) return "sportswear"
-    if (n.includes("apple") || n.includes("samsung") || n.includes("sony") || n.includes("google") || n.includes("meta")) return "tech"
-    if (n.includes("rolex") || n.includes("louis vuitton") || n.includes("gucci") || n.includes("prada") || n.includes("balenciaga")) return "luxury"
-    if (n.includes("bet") || n.includes("casino") || n.includes("poker") || n.includes("draftkings") || n.includes("bet365")) return "betting"
-    if (n.includes("protein") || n.includes("nutrition") || n.includes("gatorade") || n.includes("red bull") || n.includes("monster")) return "nutrition"
-    if (n.includes("travel") || n.includes("hotel") || n.includes("air")) return "lifestyle"
-    return "lifestyle"
-  }
+  const isPositiveDelta = player.delta7d >= 0
 
   return (
     <div className="min-h-screen bg-background">
       <Sidebar />
-      
-      <main className="ml-20 min-h-screen">
-        <div className="p-6 lg:p-8">
-          <div className="mb-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(260px,280px)_1fr]">
-            <section
-              className="relative h-[360px] min-w-[260px] w-full overflow-hidden rounded-[12px] border border-border"
-              style={{ background: player.photo_url ? "#0D1110" : player.photoGradient }}
-            >
-              {player.photo_url ? (
-                <>
-                  <img
-                    src={player.photo_url}
-                    alt=""
-                    className="absolute inset-0 z-0 h-full w-full object-cover object-top"
-                  />
-                  <div
-                    aria-hidden
-                    className="pointer-events-none absolute inset-0 z-[1] bg-gradient-to-t from-[#0D1110] via-[#0D1110]/45 to-transparent"
-                  />
-                </>
-              ) : null}
-              <svg className="pointer-events-none absolute inset-0 z-[2] h-full w-full opacity-[0.04]" viewBox="0 0 100 100" preserveAspectRatio="none">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <line key={`h-${i}`} x1="0" y1={i * 20} x2="100" y2={i * 20} stroke="white" strokeWidth="0.6" />
-                ))}
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <line key={`v-${i}`} x1={i * 20} y1="0" x2={i * 20} y2="100" stroke="white" strokeWidth="0.6" />
-                ))}
-              </svg>
-              {!player.photo_url ? (
-              <svg className="pointer-events-none absolute inset-0 z-[2] m-auto h-44 w-44 opacity-[0.06]" viewBox="0 0 100 100">
-                <circle cx="50" cy="26" r="8" fill="white" />
-                <rect x="43" y="35" width="14" height="26" rx="6" fill="white" />
-                <line x1="44" y1="46" x2="29" y2="54" stroke="white" strokeWidth="5" strokeLinecap="round" />
-                <line x1="56" y1="46" x2="71" y2="52" stroke="white" strokeWidth="5" strokeLinecap="round" />
-                <line x1="48" y1="62" x2="40" y2="81" stroke="white" strokeWidth="5" strokeLinecap="round" />
-                <line x1="52" y1="62" x2="67" y2="78" stroke="white" strokeWidth="5" strokeLinecap="round" />
-              </svg>
-              ) : null}
-              <span
-                className="pointer-events-none absolute bottom-2 right-3 z-[2] font-display text-[180px] font-extrabold leading-none text-white"
-                style={{ opacity: 0.04 }}
-              >
-                {rankWatermark}
-              </span>
-              <Link href="/rankings" className="absolute left-3 top-3 z-[3] inline-flex items-center gap-1 rounded-full border border-border bg-black/35 px-3 py-1.5 text-xs text-[#C8D8D4]">
-                <ArrowLeft className="h-3.5 w-3.5" /> Rankings
-              </Link>
-              <div className="absolute right-3 top-3 z-[3] flex flex-col items-end gap-2">
-                <span className="rounded-full border border-border bg-black/35 px-2.5 py-1 text-[11px] text-[#C8D8D4]">
-                  {player.flag} {player.nationality}
-                </span>
-                {player.calledUp ? (
-                  <span className="rounded-full border border-[#2D9E50]/30 bg-[#2D9E50]/15 px-2.5 py-1 text-[11px] text-[#2D9E50]">
-                    Called up
-                  </span>
-                ) : null}
-              </div>
-              {!player.photo_url ? (
-              <div className="absolute left-1/2 top-1/2 z-[3] flex h-20 w-20 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border-2 border-[#38A047] bg-[rgba(45,122,58,0.15)] text-2xl font-display font-bold text-[#E8F5EA]">
-                {initials}
-              </div>
-              ) : null}
-              <span className="absolute bottom-3 right-3 z-[3] rounded-full border border-border bg-black/35 px-3 py-1 text-xs text-[#C8D8D4]">
-                {player.position}
-              </span>
-            </section>
-
-            <section className="flex min-h-[360px] flex-col justify-between gap-6">
-              <div className="space-y-5">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
-                  <div>
-                    <p className="mb-2 text-[10px] uppercase tracking-[0.18em] text-[#38A047]">
-                      {player.club} · {player.league ?? "Football"}
-                    </p>
-                    <h1 className="font-display text-[38px] font-bold leading-none tracking-[-0.03em] text-white">
-                      {player.name}
-                    </h1>
-                    <div className="mt-4 flex flex-wrap gap-2">
-                      <span className="rounded-full border border-border px-3 py-1 text-xs text-[#7A9490]">Age {player.age || "—"}</span>
-                      <span className="rounded-full border border-border px-3 py-1 text-xs text-[#7A9490]">Market Value {player.marketValue}</span>
-                      <span className="rounded-full border border-[#38A047]/40 bg-[#38A047]/10 px-3 py-1 text-xs text-[#38A047]">Top 100 CMV</span>
-                    </div>
-                  </div>
-                  <Link
-                    href={`/compare?with=${id}`}
-                    className="inline-flex shrink-0 items-center justify-center gap-2 rounded-lg border border-border bg-card px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-[rgba(45,122,58,0.04)] hover:border-[rgba(56,160,71,0.22)]"
-                  >
-                    <ArrowLeftRight className="h-4 w-4 text-[#38A047]" />
-                    Compare with another player
-                  </Link>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_260px]">
-                  <div className="rounded-[10px] border border-border bg-card p-5">
-                    <p className="mb-2 text-[9px] font-medium uppercase tracking-[0.16em] text-[#38A047]">Commercial Market Value</p>
-                    <p className="font-display text-[72px] font-extrabold leading-none text-[#38A047]">
-                      {player.cmvScore}
-                    </p>
-                    <div className={`mt-2 flex items-center gap-1 text-sm ${isPositiveChange ? "text-[#2D9E50]" : "text-[#D94F4F]"}`}>
-                      {player.weeklyChange !== 0 && (isPositiveChange ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />)}
-                      <span>
-                        {isPositiveChange ? "+" : ""}
-                        {player.weeklyChange.toFixed(1)} vs last week
-                      </span>
-                    </div>
-                  </div>
-                  <div className="rounded-[10px] border border-[rgba(56,160,71,0.22)] bg-card p-5">
-                    <p className="section-title mb-2">Opportunity Score</p>
-                    <p className="font-display text-[32px] font-bold" style={{ color: opportunityScoreAccent(player.opportunityScore) }}>
-                      {player.opportunityScore}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {isAuthed ? <PlayerStatStrip profile={profile} /> : null}
-            </section>
+      <div className="ml-[220px] pb-24">
+        {/* ============ HERO BANNER ============ */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.4 }}
+          className="relative border-b border-border-default overflow-hidden"
+        >
+          {/* Blurred photo as background */}
+          <div className="absolute inset-0">
+            <Image
+              src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+              alt=""
+              fill
+              className="object-cover opacity-25 blur-2xl scale-110"
+              priority
+            />
+            <div className="absolute inset-0 bg-gradient-to-r from-background via-background/85 to-background/40" />
+            <div className="absolute inset-0 bg-gradient-to-t from-background via-transparent to-transparent" />
           </div>
 
-          {isAuthed ? (
-            <PlayerProfileAnalysis player={player} profile={profile} />
-          ) : (
-            <PlayerAnalysisLocked />
-          )}
+          <div className="relative flex items-start gap-8 p-8">
+            {/* Left: Big Photo */}
+            <div className="relative shrink-0">
+              <div
+                className="w-44 h-44 rounded-2xl overflow-hidden border-[3px] border-accent-primary/60"
+                style={{ boxShadow: "0 0 60px rgba(0,255,135,0.25)" }}
+              >
+                <Image
+                  src={getPlayerPhoto(player.rank) || "/placeholder.svg"}
+                  alt={player.name}
+                  width={176}
+                  height={176}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              {/* Rank badge floating */}
+              <div className="absolute -bottom-2 -right-2 flex items-center gap-1 px-2.5 py-1 rounded-lg bg-accent-primary text-background font-mono text-sm font-bold shadow-lg">
+                #{player.rank}
+              </div>
+            </div>
 
-          {/* COMMERCIAL INTELLIGENCE */}
-          <section className="mt-10 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-                  Commercial Intelligence
-                </p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Sponsored Content
-                    </p>
-                    <p className="mt-2 text-sm text-[#9CA3AF]">Branded posts / month</p>
-                    <p className="mt-1 text-xl font-semibold text-white">
-                      {campaign?.branded_posts_count != null ? campaign.branded_posts_count : "—"}
-                    </p>
-                    <p className="mt-4 text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Sponsorship density
-                    </p>
-                    {campaign?.sponsorship_density != null ? (
-                      <div className="mt-1">
-                        <div className="mb-1 flex items-center justify-between text-xs text-[#9CA3AF]">
-                          <span>{(campaign.sponsorship_density * 100).toFixed(1)}%</span>
-                        </div>
-                        <div className="h-2 rounded-full bg-[#111827]">
-                          <div
-                            className="h-2 rounded-full bg-[#00ff87]"
-                            style={{ width: `${Math.min(100, campaign.sponsorship_density * 100)}%` }}
-                          />
-                        </div>
-                      </div>
-                    ) : (
-                      <p className="mt-1 text-sm text-[#9CA3AF]">—</p>
+            {/* Center: Info */}
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2 text-tertiary text-xs">
+                <Link href="/rankings" className="hover:text-secondary transition-colors">
+                  Rankings
+                </Link>
+                <ChevronRight className="w-3 h-3" />
+                <span className="text-foreground-secondary">{player.name}</span>
+              </div>
+
+              <h1 className="text-5xl font-extrabold text-primary tracking-[-0.03em] mt-2">
+                {player.name}
+              </h1>
+
+              <div className="flex items-center gap-3 mt-3 font-mono text-[13px] text-secondary flex-wrap">
+                <span
+                  className={cn(
+                    "px-2 py-0.5 rounded border font-mono text-xs",
+                    positionColors[player.position]
+                  )}
+                >
+                  {player.position}
+                </span>
+                <span className="text-tertiary">·</span>
+                <span className="text-primary font-semibold">{player.club}</span>
+                <span className="text-tertiary">·</span>
+                <span>{player.league}</span>
+                <span className="text-tertiary">·</span>
+                <span>
+                  {player.nationalityFlag} {player.nationality}
+                </span>
+              </div>
+
+              {/* Meta stats row */}
+              <div className="flex items-center gap-6 mt-5">
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-tertiary">
+                    Age
+                  </div>
+                  <div className="font-mono text-lg font-bold">{player.age}</div>
+                </div>
+                <div className="h-8 w-px bg-border-default" />
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-tertiary">
+                    Market Value
+                  </div>
+                  <div className="font-mono text-lg font-bold">
+                    {profile.marketValue ?? (
+                      <span className="text-foreground-tertiary">—</span>
                     )}
                   </div>
-
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Brand Verticals
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {brandVerticals.length === 0 ? (
-                        <p className="text-sm text-[#6B7280]">No brand data available yet</p>
-                      ) : (
-                        brandVerticals.map((v) => {
-                          const key = v.toLowerCase()
-                          let color = "#6B7280"
-                          if (key === "sportswear") color = "#3B82F6"
-                          else if (key === "lifestyle") color = "#10B981"
-                          else if (key === "tech") color = "#8B5CF6"
-                          else if (key === "betting") color = "#F97316"
-                          else if (key === "luxury") color = "#FACC15"
-                          return (
-                            <span
-                              key={v}
-                              className="rounded-full bg-[#111827] px-3 py-1 text-xs font-medium"
-                              style={{ border: `1px solid ${color}55`, color }}
-                            >
-                              {v}
-                            </span>
-                          )
-                        })
-                      )}
-                    </div>
+                </div>
+                <div className="h-8 w-px bg-border-default" />
+                <div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-foreground-tertiary">
+                    Global Rank
+                  </div>
+                  <div className="font-mono text-lg font-bold text-accent-primary">
+                    Top {player.rank <= 10 ? "10" : player.rank <= 100 ? "100" : "1000"} CMV
                   </div>
                 </div>
-
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Detected Brand Categories
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {detectedBrands.length === 0 ? (
-                        <p className="text-sm text-[#6B7280]">No brand data available yet</p>
-                      ) : (
-                        detectedBrands.map((b) => (
-                          <span
-                            key={b}
-                            className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs text-[#E5E7EB]"
-                          >
-                            {b}
-                          </span>
-                        ))
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Recommended Campaigns
-                    </p>
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {(uniqueRecommended.length ? uniqueRecommended : ["Brand Ambassador"]).map((c) => (
-                        <span
-                          key={c}
-                          className="rounded-full border border-[#00ff87]/40 bg-[#00ff87]/10 px-3 py-1 text-xs font-medium text-[#E5E7EB]"
-                        >
-                          {c}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </section>
-
-          {/* BRAND VERTICAL RADAR */}
-          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-              Brand Vertical Radar
-            </p>
-            <div className="rounded-lg bg-[#12121A] p-4">
-              <BrandVerticalRadar data={radarData} />
-            </div>
-          </section>
-
-          {/* MAIN SPONSORS */}
-          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
-            <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-              Main Sponsors
-            </p>
-            {detectedBrands.length === 0 ? (
-              <p className="text-sm text-[#6B7280]">No brand data available yet</p>
-            ) : (
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                {detectedBrands.map((b) => {
-                  const v = inferVerticalFromBrand(b)
-                  return (
-                    <div
-                      key={b}
-                      className="rounded-lg border border-white/5 bg-[#12121A] p-3 transition hover:border-white/10 hover:bg-white/[0.03]"
-                    >
-                      <p className="text-sm font-semibold text-white">{b}</p>
-                      <p className="mt-1 text-xs uppercase tracking-wider text-[#6B7280]">
-                        {v}
-                      </p>
-                      <p className="mt-2 text-xs text-[#6B7280]">Detected</p>
-                    </div>
-                  )
-                })}
               </div>
-            )}
-          </section>
 
-          {/* BRAND FIT BREAKDOWN */}
-          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-                  Brand Fit Breakdown
-                </p>
-                <div className="space-y-3">
-                  {[
-                    { label: "Lifestyle Appeal", value: lifestyleScore },
-                    { label: "Sportswear Fit", value: fitSportswear },
-                    { label: "Betting Fit", value: fitBetting },
-                    { label: "Brand Safety", value: brandSafety },
-                  ].map((item) => (
-                    <div key={item.label}>
-                      <div className="mb-1 flex items-center justify-between text-xs">
-                        <span className="uppercase tracking-[0.16em] text-[#6B7280]">
-                          {item.label}
-                        </span>
-                        <span className="font-semibold text-white">
-                          {item.value != null ? item.value : "—"}
-                        </span>
-                      </div>
-                      <div className="h-2 rounded-full bg-[#111827]">
-                        <div
-                          className={`h-2 rounded-full ${barColor(item.value)}`}
-                          style={{
-                            width: `${
-                              item.value != null ? Math.min(100, Math.max(0, item.value)) : 0
-                            }%`,
-                          }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+              <div className="flex gap-2 mt-5">
+                <Link
+                  href={`/compare?with=${player.id}`}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-accent-primary text-background text-sm font-semibold hover:bg-accent-primary/90 transition-colors"
+                >
+                  <Scale className="w-3.5 h-3.5" />
+                  Compare with another player
+                </Link>
+                <button className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
+                  <Eye className="w-3.5 h-3.5" />
+                  Watch
+                </button>
+              </div>
+            </div>
+
+            {/* Right: CMV + Opportunity scores stacked */}
+            <div className="flex flex-col gap-3 shrink-0">
+              <div className="rounded-xl border border-accent-primary/30 bg-accent-primary/5 px-5 py-4 min-w-[200px]">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-accent-primary/80">
+                  Commercial Market Value
                 </div>
-              </section>
-
-          {/* SOCIAL MEDIA DEEP DIVE */}
-          <section className="mt-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-                  Social Media Deep Dive
-                </p>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {/* Instagram */}
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Instagram
-                    </p>
-                    <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
-                    <p className="mt-1 text-xl font-semibold text-white">
-                      {igFollowersNum != null ? formatFollowersCompact(igFollowersNum) : "—"}
-                    </p>
-                    <div className="mt-3 flex items-center justify-between">
-                      <div>
-                        <p className="text-xs text-[#9CA3AF]">Engagement rate</p>
-                        <p className="text-sm font-semibold text-white">
-                          {engagementNum != null ? formatPercentValue(engagementNum) : "—"}
-                        </p>
-                      </div>
-                      <span className="rounded-full bg-[#111827] px-2.5 py-1 text-xs text-[#10B981]">
-                        {leagueBenchmarkLabel}
-                      </span>
-                    </div>
-                    <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-[#9CA3AF]">
-                      <div>
-                        <p className="text-xs text-[#6B7280]">Avg likes</p>
-                        <p className="mt-1 text-white">
-                          {socialDetail?.avg_likes != null
-                            ? formatFollowersCompact(socialDetail.avg_likes)
-                            : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#6B7280]">Avg comments</p>
-                        <p className="mt-1 text-white">
-                          {socialDetail?.avg_comments != null
-                            ? formatFollowersCompact(socialDetail.avg_comments)
-                            : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* TikTok */}
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      TikTok
-                    </p>
-                    <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
-                    <p className="mt-1 text-xl font-semibold text-white">
-                      {social?.tt_followers != null && social.tt_followers >= 10000
-                        ? formatFollowersCompact(social.tt_followers)
-                        : "—"}
-                    </p>
-                    <div className="mt-3">
-                      <p className="text-xs text-[#6B7280]">Avg views</p>
-                      <p className="mt-1 text-sm font-semibold text-white">
-                        {socialDetail?.tt_avg_views != null
-                          ? formatInteger(socialDetail.tt_avg_views)
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* X (Twitter) */}
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      X (Twitter)
-                    </p>
-                    <p className="mt-2 text-sm text-[#9CA3AF]">Followers</p>
-                    <p className="mt-1 text-xl font-semibold text-white">
-                      {(social as any)?.x_followers != null && (social as any).x_followers >= 10000
-                        ? formatFollowersCompact((social as any).x_followers)
-                        : "—"}
-                    </p>
-                  </div>
-
-                  {/* YouTube */}
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      YouTube
-                    </p>
-                    <p className="mt-2 text-sm text-[#9CA3AF]">Subscribers</p>
-                    <p className="mt-1 text-xl font-semibold text-white">
-                      {(social as any)?.yt_subscribers != null && (social as any).yt_subscribers >= 1000
-                        ? formatFollowersCompact((social as any).yt_subscribers)
-                        : "—"}
-                    </p>
-                    <div className="mt-3">
-                      <p className="text-xs text-[#6B7280]">Avg views</p>
-                      <p className="mt-1 text-sm font-semibold text-white">
-                        {(social as any)?.yt_avg_views != null
-                          ? formatInteger((social as any).yt_avg_views)
-                          : "—"}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Content */}
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Content
-                    </p>
-                    <div className="mt-2 grid grid-cols-2 gap-3 text-sm">
-                      <div>
-                        <p className="text-xs text-[#6B7280]">Posting frequency</p>
-                        <p className="mt-1 font-semibold text-white">
-                          {socialDetail?.posting_frequency != null
-                            ? `${socialDetail.posting_frequency.toFixed(2)} posts/day`
-                            : "—"}
-                        </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-[#6B7280]">Avg video views</p>
-                        <p className="mt-1 font-semibold text-white">
-                          {socialDetail?.avg_views != null
-                            ? formatInteger(socialDetail.avg_views)
-                            : "—"}
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Audience Quality */}
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs font-semibold uppercase tracking-[0.16em] text-[#6B7280]">
-                      Audience Quality
-                    </p>
-                    <p className="mt-2 text-sm text-[#9CA3AF]">
-                      Engagement vs follower base
-                    </p>
-                    <p className="mt-1 text-xl font-semibold text-white">
-                      {audienceQuality}
-                    </p>
-                  </div>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <AnimatedNumber
+                    value={player.cmvScore}
+                    className="font-mono text-5xl font-bold text-accent-primary leading-none tracking-[-2px]"
+                  />
+                  <span className="text-xs text-foreground-tertiary">/ 100</span>
                 </div>
-              </section>
-
-          {/* SPORTS PERFORMANCE DETAIL */}
-          <section className="mt-8 mb-8 rounded-xl border border-white/5 bg-[#0D0D14] p-6">
-                <p className="mb-4 text-xs font-semibold uppercase tracking-[0.18em] text-[#6B7280]">
-                  Sports Performance Detail
-                </p>
-                <div className="grid gap-4 md:grid-cols-4">
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Goals</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">
-                      {goals != null ? goals : "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Assists</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">
-                      {assists != null ? assists : "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Apps</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">
-                      {matches != null ? matches : "—"}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">Minutes</p>
-                    <p className="mt-2 text-2xl font-semibold text-white">
-                      {minutes != null ? minutes : "—"}
-                    </p>
-                  </div>
+                <div
+                  className={`mt-2 font-mono text-xs font-semibold flex items-center gap-1 ${
+                    isPositiveDelta ? "text-positive" : "text-negative"
+                  }`}
+                >
+                  {isPositiveDelta ? (
+                    <TrendingUp className="w-3 h-3" />
+                  ) : (
+                    <TrendingDown className="w-3 h-3" />
+                  )}
+                  {isPositiveDelta ? "+" : ""}
+                  {player.delta7d.toFixed(1)} vs last week
                 </div>
+              </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2">
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
-                      Form Rating
-                    </p>
-                    <p className="mt-1 text-sm text-[#9CA3AF]">0–10</p>
-                    <div className="mt-2 h-2 rounded-full bg-[#111827]">
-                      <div
-                        className="h-2 rounded-full bg-[#00ff87]"
-                        style={{
-                          width: `${
-                            rating != null
-                              ? Math.min(100, Math.max(0, (Number(rating) / 10) * 100))
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-white">
-                      {rating != null ? rating.toFixed(2) : "—"}
-                    </p>
-                  </div>
-
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
-                      Pass Accuracy
-                    </p>
-                    <p className="mt-1 text-sm text-[#9CA3AF]">0–100%</p>
-                    <div className="mt-2 h-2 rounded-full bg-[#111827]">
-                      <div
-                        className="h-2 rounded-full bg-[#00ff87]"
-                        style={{
-                          width: `${
-                            passAccuracy != null
-                              ? Math.min(100, Math.max(0, Number(passAccuracy)))
-                              : 0
-                          }%`,
-                        }}
-                      />
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-white">
-                      {passAccuracy != null ? `${passAccuracy.toFixed(1)}%` : "—"}
-                    </p>
-                  </div>
+              <div className="rounded-xl border border-border-default bg-surface-1 px-5 py-4">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-foreground-tertiary">
+                  Opportunity Score
                 </div>
-
-                <div className="mt-6 grid gap-4 md:grid-cols-3">
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
-                      Goals per 90
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-white">
-                      {per90(goals, minutes)}
-                    </p>
-                  </div>
-                  <div className="rounded-lg bg-[#12121A] p-4">
-                    <p className="text-xs text-[#6B7280] uppercase tracking-[0.16em]">
-                      Assists per 90
-                    </p>
-                    <p className="mt-2 text-lg font-semibold text-white">
-                      {per90(assists, minutes)}
-                    </p>
-                  </div>
-                  <div className="flex items-center justify-end rounded-lg bg-[#12121A] p-4">
-                    <span className="rounded-full border border-white/10 bg-[#111827] px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#9CA3AF]">
-                      2025/26
-                    </span>
-                  </div>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <AnimatedNumber
+                    value={player.oppScore}
+                    className="font-mono text-4xl font-bold text-foreground leading-none tracking-[-1px]"
+                  />
+                  <span className="text-xs text-foreground-tertiary">/ 100</span>
                 </div>
-              </section>
+                <div className="mt-2 font-mono text-[10px] text-foreground-tertiary uppercase tracking-wider">
+                  Commercial potential
+                </div>
+              </div>
+            </div>
+          </div>
+        </motion.div>
+
+        {/* ============ CMV BREAKDOWN — 6 SUBSCORES ============ */}
+        <section className="px-6 mt-8">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-1 h-4 rounded-full bg-accent-primary" />
+            <h2 className="text-xs font-mono uppercase tracking-widest text-accent-primary">
+              CMV Breakdown
+            </h2>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+            {subscores.map((subscore, index) => (
+              <motion.div
+                key={subscore.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: 0.05 * index }}
+              >
+                <SubscoreCard
+                  label={subscore.label}
+                  score={subscore.score}
+                  weight={subscore.weight}
+                  color={subscore.color}
+                  isPositive={subscore.isPositive}
+                  delay={0.1 * index}
+                />
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
+        {/* ============ CMV EVOLUTION CHART ============ */}
+        <section className="px-6 mt-8">
+          <div className="flex items-center gap-2 mb-5">
+            <div className="w-1 h-4 rounded-full bg-accent-primary" />
+            <h2 className="text-xs font-mono uppercase tracking-widest text-accent-primary">
+              CMV Evolution
+            </h2>
+          </div>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.2 }}
+          >
+            <CMVChart />
+          </motion.div>
+        </section>
+
+        {/* ============ COMMERCIAL INTELLIGENCE ============ */}
+        <CommercialSection profile={profile} />
+
+        {/* ============ SOCIAL MEDIA DEEP DIVE ============ */}
+        <SocialSection profile={profile} />
+
+        {/* ============ SPORTS PERFORMANCE DETAIL ============ */}
+        <SportsSection profile={profile} />
+      </div>
+
+      {/* Sticky Bottom Action Bar */}
+      <div className="fixed bottom-0 left-[220px] right-0 bg-[rgba(11,17,32,0.95)] backdrop-blur-xl border-t border-border-default py-3.5 px-8 z-50">
+        <div className="flex items-center justify-between">
+          <div className="font-mono text-sm text-secondary">
+            {player.name}{" "}
+            <span className="text-foreground-tertiary mx-1">·</span>{" "}
+            <span className="text-accent-primary font-semibold">CMV {player.cmvScore}</span>
+          </div>
+          <div className="flex gap-2">
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
+              <Plus className="w-3.5 h-3.5" />
+              Watchlist
+            </button>
+            <Link
+              href={`/compare?with=${player.id}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors"
+            >
+              <Scale className="w-3.5 h-3.5" />
+              Compare
+            </Link>
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </button>
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
+              <Bell className="w-3.5 h-3.5" />
+              Alert
+            </button>
+          </div>
         </div>
-      </main>
+      </div>
     </div>
   )
 }
