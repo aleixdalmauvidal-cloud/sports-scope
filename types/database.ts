@@ -83,7 +83,13 @@ export type SocialMetricsRow = {
   ig_followers?: number | null;
   tt_followers?: number | null;
   engagement_rate?: number | null;
+  avg_likes?: number | null;
+  avg_comments?: number | null;
+  avg_views?: number | null;
   avg_views_per_post?: number | null;
+  avg_saves?: number | null;
+  posting_frequency?: number | null;
+  latest_post_captions?: string[] | null;
   /** Normalizado desde `follower_growth_30d` (seguidores absolutos, no %) */
   followers_growth_30d?: number | null;
 };
@@ -202,7 +208,10 @@ export type Database = {
       };
       social_metrics: {
         Row: SocialMetricsRow;
-        Insert: Omit<SocialMetricsRow, never> & { athlete_id: string };
+        Insert: Omit<SocialMetricsRow, never> & {
+          athlete_id: string;
+          avg_views?: number | null;
+        };
         Update: Partial<SocialMetricsRow>;
       };
     };
