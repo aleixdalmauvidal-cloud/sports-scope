@@ -39,6 +39,8 @@ async function main() {
   await runStep(["npx", "tsx", "scripts/sync-football-stats.ts"], "sync-football-stats");
   await runStep(["npx", "tsx", "scripts/scrape-instagram.ts"], "scrape-instagram");
   await runStep(["npx", "tsx", "scripts/scrape-tiktok.ts"], "scrape-tiktok");
+  await runStep(["npx", "tsx", "scripts/scrape-x.ts"], "scrape-x");
+  await runStep(["npx", "tsx", "scripts/scrape-youtube.ts"], "scrape-youtube");
   await runStep(["npx", "tsx", "scripts/analyze-brand-fit.ts"], "analyze-brand-fit");
   await runStep(
     ["npx", "tsx", "scripts/calculate-cmv.ts", "--force"],
