@@ -117,10 +117,21 @@ async function saveToSupabase(args: {
 }
 
 async function main() {
+  const { count: activeAthletesCount, error: activeCountError } = await supabase
+    .from("athletes")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+
+  if (activeCountError) {
+    console.error("❌ Error contando atletas activos:", activeCountError.message);
+    return;
+  }
+
   const { data: athletes, error } = await supabase
     .from("athletes")
-    .select("id, name, instagram_handle, tiktok_handle")
-    .eq("is_active", true);
+    .select("id, name, tiktok_handle")
+    .eq("is_active", true)
+    .not("tiktok_handle", "is", null);
 
   if (error || !athletes?.length) {
     console.log("⚠️  No hay atletas activos.");
@@ -129,7 +140,7 @@ async function main() {
 
   const withHandle = athletes
     .map((a: any) => {
-      const handle = (a.tiktok_handle ?? a.instagram_handle ?? "").trim();
+      const handle = (a.tiktok_handle ?? "").trim();
       return handle
         ? {
             id: a.id as string,
@@ -141,11 +152,13 @@ async function main() {
     .filter(Boolean) as { id: string; name: string; handle: string }[];
 
   if (withHandle.length === 0) {
-    console.log("⚠️  No hay atletas activos con tiktok_handle ni instagram_handle (fallback).");
+    console.log("⚠️  No hay atletas activos con tiktok_handle.");
     return;
   }
 
-  console.log(`📋 ${withHandle.length} atletas activos con handle TikTok (o fallback Instagram)`);
+  const skippedNoTikTokHandle = Math.max(0, (activeAthletesCount ?? 0) - withHandle.length);
+  console.log(`⏭️  Atletas saltados por no tener tiktok_handle: ${skippedNoTikTokHandle}`);
+  console.log(`📋 ${withHandle.length} atletas activos con handle TikTok`);
 
   const batchSize = 10;
   for (let i = 0; i < withHandle.length; i += batchSize) {
