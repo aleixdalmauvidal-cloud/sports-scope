@@ -128,8 +128,10 @@ function hasSocialSignal(s: SocialRow | undefined): boolean {
   if (!s) return false;
   const ig = Number(s.ig_followers ?? 0);
   const tt = Number(s.tt_followers ?? 0);
+  const xf = Number((s as any).x_followers ?? 0);
+  const yt = Number((s as any).yt_subscribers ?? 0);
   const er = s.engagement_rate;
-  if (ig + tt > 0) return true;
+  if (ig + tt + xf + yt > 0) return true;
   if (er != null && Number.isFinite(Number(er)) && Number(er) > 0) return true;
   return false;
 }
@@ -190,14 +192,20 @@ function computeAdjustmentScore(s: SocialRow | undefined): number {
   const ig = Number(s?.ig_followers ?? 0);
 
   // Platform diversity — penalize only if athlete has very few platforms
-  // NOTE: when X and YouTube are added, include them in platformCount array
   const igPresent = ig > 1_000;
   const ttFollowers = s?.tt_followers;
   const ttPresent =
     ttFollowers != null &&
     Number.isFinite(Number(ttFollowers)) &&
     Number(ttFollowers) > 1_000;
-  const platformCount = [igPresent, ttPresent].filter(Boolean).length;
+  // Platform diversity across all social channels
+  const xFollowers = (s as any)?.x_followers;
+  const xPresent =
+    xFollowers != null && Number.isFinite(Number(xFollowers)) && Number(xFollowers) > 1_000;
+  const ytSubs = (s as any)?.yt_subscribers;
+  const ytPresent =
+    ytSubs != null && Number.isFinite(Number(ytSubs)) && Number(ytSubs) > 1_000;
+  const platformCount = [igPresent, ttPresent, xPresent, ytPresent].filter(Boolean).length;
   if (platformCount === 0) score -= 15;
   else if (platformCount === 1) score -= 5;
 
@@ -236,7 +244,9 @@ function socialScoreFromData(
 ): number {
   const ig = Number(s.ig_followers ?? 0);
   const tt = Number(s.tt_followers ?? 0);
-  const total = ig + tt;
+  const xf = Number((s as any).x_followers ?? 0);
+  const yt = Number((s as any).yt_subscribers ?? 0);
+  const total = ig + tt + xf + yt;
   const logF = Math.log10(1 + total);
   const folPct = percentileStrictBelow(poolLogFollowers, logF);
 
@@ -410,7 +420,9 @@ async function main(): Promise<void> {
   for (const s of latestSocial.values()) {
     const ig = Number(s.ig_followers ?? 0);
     const tt = Number(s.tt_followers ?? 0);
-    poolLogFollowers.push(Math.log10(1 + ig + tt));
+    const xf = Number((s as any).x_followers ?? 0);
+    const yt = Number((s as any).yt_subscribers ?? 0);
+    poolLogFollowers.push(Math.log10(1 + ig + tt + xf + yt));
     const er = s.engagement_rate;
     if (er != null && Number.isFinite(Number(er))) poolEngagement.push(Number(er));
   }
