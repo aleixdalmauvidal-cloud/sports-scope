@@ -65,38 +65,72 @@ function extractJsonObject(text: string): any {
   return JSON.parse(slice);
 }
 
-async function callAnthropic(prompt: string): Promise<any> {
+async function callAnthropicBatch(requests: { id: string; prompt: string }[]): Promise<Map<string, any>> {
   const apiKey = requiredEnv("ANTHROPIC_API_KEY");
-  const res = await fetch("https://api.anthropic.com/v1/messages", {
+
+  const batchRes = await fetch("https://api.anthropic.com/v1/messages/batches", {
     method: "POST",
     headers: {
       "content-type": "application/json",
       "x-api-key": apiKey,
       "anthropic-version": "2023-06-01",
+      "anthropic-beta": "message-batches-2024-09-24",
     },
     body: JSON.stringify({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 500,
-      temperature: 0.2,
-      messages: [{ role: "user", content: prompt }],
+      requests: requests.map(r => ({
+        custom_id: r.id,
+        params: {
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 500,
+          temperature: 0.2,
+          messages: [{ role: "user", content: r.prompt }],
+        },
+      })),
     }),
   });
 
-  const data: any = await res.json().catch(() => null);
-  if (!res.ok) {
-    throw new Error(
-      `Anthropic error ${res.status}: ${JSON.stringify(data)?.slice(0, 500)}`
-    );
+  const batch: any = await batchRes.json();
+  if (!batchRes.ok) throw new Error(`Batch create error: ${JSON.stringify(batch).slice(0, 300)}`);
+
+  const batchId = batch.id;
+  console.log(`[analyze:brands] Batch created: ${batchId}`);
+
+  let status = batch.processing_status;
+  while (status !== "ended") {
+    await new Promise(r => setTimeout(r, 10000));
+    const pollRes = await fetch(`https://api.anthropic.com/v1/messages/batches/${batchId}`, {
+      headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-beta": "message-batches-2024-09-24" },
+    });
+    const pollData: any = await pollRes.json();
+    status = pollData.processing_status;
+    console.log(`[analyze:brands] Batch status: ${status} — succeeded: ${pollData.request_counts?.succeeded ?? "?"}`);
   }
 
-  const text =
-    data?.content?.find((c: any) => c?.type === "text")?.text ??
-    data?.content?.[0]?.text ??
-    "";
-  if (typeof text !== "string" || !text.trim()) {
-    throw new Error("Anthropic response missing text");
+  const resultsRes = await fetch(`https://api.anthropic.com/v1/messages/batches/${batchId}/results`, {
+    headers: { "x-api-key": apiKey, "anthropic-version": "2023-06-01", "anthropic-beta": "message-batches-2024-09-24" },
+  });
+
+  const resultsText = await resultsRes.text();
+  const results = new Map<string, any>();
+
+  for (const line of resultsText.split("\n").filter(Boolean)) {
+    try {
+      const item = JSON.parse(line);
+      const customId = item.custom_id;
+      const text = item.result?.message?.content?.find((c: any) => c.type === "text")?.text ?? "";
+      if (text) {
+        try {
+          results.set(customId, extractJsonObject(text));
+        } catch {
+          console.error(`[analyze:brands] JSON parse failed for ${customId}`);
+        }
+      }
+    } catch {
+      continue;
+    }
   }
-  return extractJsonObject(text);
+
+  return results;
 }
 
 function buildPrompt(args: {
@@ -226,6 +260,16 @@ async function main(): Promise<void> {
   let ok = 0;
   let fail = 0;
 
+  console.log("[analyze:brands] Building prompts for all athletes…");
+  const batchRequests: {
+    id: string;
+    prompt: string;
+    athlete: typeof athletes[0];
+    captions: string[];
+    newsHeadlines: string[];
+    wikipediaSponsors: string[];
+  }[] = [];
+
   for (const athlete of athletes) {
     const social = latestSocial.get(athlete.id);
     const igFollowers = social?.ig_followers ?? null;
@@ -254,10 +298,25 @@ async function main(): Promise<void> {
       wikipediaSponsors,
     });
 
+    batchRequests.push({
+      id: athlete.id,
+      prompt,
+      athlete,
+      captions,
+      newsHeadlines,
+      wikipediaSponsors,
+    });
+  }
+
+  console.log(`[analyze:brands] Submitting batch of ${batchRequests.length} requests…`);
+  const batchResults = await callAnthropicBatch(batchRequests.map(r => ({ id: r.id, prompt: r.prompt })));
+  console.log(`[analyze:brands] Batch complete. Processing ${batchResults.size} results…`);
+
+  for (const { athlete, captions, newsHeadlines, wikipediaSponsors } of batchRequests) {
     process.stdout.write(`[analyze:brands] ${athlete.name}… `);
     try {
-      await new Promise((r) => setTimeout(r, 8000));
-      const estimate = await callAnthropic(prompt);
+      const estimate = batchResults.get(athlete.id);
+      if (!estimate) throw new Error("No result in batch");
 
       const brandsDetected = normalizeStringArray(estimate?.brands_detected);
       const brandVerticals = normalizeStringArray(estimate?.brand_verticals);
