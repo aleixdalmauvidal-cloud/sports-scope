@@ -299,44 +299,6 @@ export default function ComparePage() {
 
         {activePlayers.length >= 2 && (
           <>
-            {/* Radar Chart */}
-            <motion.div
-              variants={itemVariants}
-              className="bg-background-surface rounded-xl p-6 shadow-card flex flex-col items-center"
-            >
-              <h2 className="headline text-lg text-foreground mb-4">CMV Profile Comparison</h2>
-              <div style={{ width: 360, height: 320 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
-                    <PolarGrid stroke="rgba(255,255,255,0.06)" />
-                    <PolarAngleAxis
-                      dataKey="dimension"
-                      tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11, fontFamily: "var(--font-mono)" }}
-                    />
-                    {activePlayers.map((player, idx) => (
-                      <Radar
-                        key={player.id}
-                        name={player.name}
-                        dataKey={player.name}
-                        stroke={playerColors[idx]}
-                        fill={playerColors[idx]}
-                        fillOpacity={0.15}
-                        strokeWidth={2}
-                      />
-                    ))}
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-              <div className="flex items-center gap-6 mt-4">
-                {activePlayers.map((player, idx) => (
-                  <div key={player.id} className="flex items-center gap-2">
-                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: playerColors[idx] }} />
-                    <span className="text-sm text-foreground-secondary">{player.name}</span>
-                  </div>
-                ))}
-              </div>
-            </motion.div>
-
             {/* Comparison Table */}
             <motion.div variants={itemVariants} className="bg-background-surface rounded-xl shadow-card overflow-hidden">
               <table className="w-full">
@@ -425,6 +387,44 @@ export default function ComparePage() {
                   })}
                 </tbody>
               </table>
+            </motion.div>
+
+            {/* Radar Chart */}
+            <motion.div
+              variants={itemVariants}
+              className="bg-background-surface rounded-xl p-6 shadow-card flex flex-col items-center"
+            >
+              <h2 className="headline text-lg text-foreground mb-4">CMV Profile Comparison</h2>
+              <div style={{ width: 360, height: 320 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart data={radarData} cx="50%" cy="50%" outerRadius="75%">
+                    <PolarGrid stroke="rgba(255,255,255,0.06)" />
+                    <PolarAngleAxis
+                      dataKey="dimension"
+                      tick={{ fill: "rgba(255,255,255,0.5)", fontSize: 11, fontFamily: "var(--font-mono)" }}
+                    />
+                    {activePlayers.map((player, idx) => (
+                      <Radar
+                        key={player.id}
+                        name={player.name}
+                        dataKey={player.name}
+                        stroke={playerColors[idx]}
+                        fill={playerColors[idx]}
+                        fillOpacity={0.15}
+                        strokeWidth={2}
+                      />
+                    ))}
+                  </RadarChart>
+                </ResponsiveContainer>
+              </div>
+              <div className="flex items-center gap-6 mt-4">
+                {activePlayers.map((player, idx) => (
+                  <div key={player.id} className="flex items-center gap-2">
+                    <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: playerColors[idx] }} />
+                    <span className="text-sm text-foreground-secondary">{player.name}</span>
+                  </div>
+                ))}
+              </div>
             </motion.div>
 
             {/* CMV Trend Overlap Chart */}
