@@ -17,7 +17,7 @@ import type { Database } from "../types/database";
 
 dotenv.config({ path: ".env.local" });
 
-const SCORE_VERSION = "v1";
+const SCORE_VERSION = "v4.0";
 const BATCH_SIZE = 50;
 const PAGE_SIZE = 1000;
 
@@ -31,12 +31,11 @@ const W_SPORTS_RATING = 0.4;
 const W_SPORTS_MINUTES_PCT = 0.3;
 const W_SPORTS_GA90_PCT = 0.3;
 
-const W_CMV_SPORTS = 0.25;
-const W_CMV_SOCIAL = 0.3;
+const W_CMV_SPORTS = 0.3;
+const W_CMV_SOCIAL = 0.4;
 const W_CMV_COMMERCIAL = 0.15;
-const W_CMV_BRAND = 0.1;
 const W_CMV_MOMENTUM = 0.1;
-const W_CMV_ADJUSTMENT = 0.1;
+const W_CMV_BRAND_SAFETY = 0.05;
 
 type SportsRow = Database["public"]["Tables"]["sports_metrics"]["Row"];
 type SocialRow = Database["public"]["Tables"]["social_metrics"]["Row"];
@@ -44,21 +43,38 @@ type AthleteRow = Database["public"]["Tables"]["athletes"]["Row"];
 
 function computeCommercialScore(cs: any): number {
   if (!cs) return DEFAULT_COMMERCIAL;
-  const brandedPostsScore =
-    Math.min(100, ((cs.branded_posts_count ?? 0) / 20) * 100) * 0.4;
-  const uniqueBrandsScore =
-    Math.min(100, ((cs.unique_brands_count ?? 0) / 10) * 100) * 0.25;
-  const verticalDiversityScore =
-    Math.min(100, (((cs.brand_verticals?.length ?? 0) as number) / 6) * 100) * 0.2;
-  const densityScore =
-    Math.min(100, (cs.sponsorship_density ?? 0) * 100) * 0.15;
-  return Math.round(
-    clamp(
-      brandedPostsScore + uniqueBrandsScore + verticalDiversityScore + densityScore,
-      0,
-      100
-    )
-  );
+
+  const brandedPostsRaw = Number(cs.branded_posts_count ?? 0);
+  const brandedPostsCount = Number.isFinite(brandedPostsRaw) ? brandedPostsRaw : 0;
+  const brandsDetected = Array.isArray(cs.brands_detected)
+    ? cs.brands_detected.filter((b: unknown) => typeof b === "string" && b.trim())
+    : [];
+  const verticals = Array.isArray(cs.brand_verticals)
+    ? cs.brand_verticals.filter((v: unknown) => typeof v === "string" && v.trim())
+    : [];
+
+  let baseScore: number;
+  if (brandedPostsCount > 0) {
+    const brandedPostsScore = Math.min(100, (brandedPostsCount / 20) * 100) * 0.4;
+    const uniqueBrandsScore =
+      Math.min(100, ((cs.unique_brands_count ?? brandsDetected.length ?? 0) / 10) * 100) * 0.25;
+    const verticalDiversityScore = Math.min(100, (verticals.length / 6) * 100) * 0.2;
+    const densityScore =
+      Math.min(100, (Number(cs.sponsorship_density ?? 0) || 0) * 100) * 0.15;
+    baseScore = brandedPostsScore + uniqueBrandsScore + verticalDiversityScore + densityScore;
+  } else {
+    if (brandsDetected.length >= 7) baseScore = 80;
+    else if (brandsDetected.length >= 4) baseScore = 60;
+    else if (brandsDetected.length >= 1) baseScore = 40;
+    else baseScore = DEFAULT_COMMERCIAL;
+  }
+
+  const uniqueVerticals = new Set(
+    verticals.map((v: string) => v.trim().toLowerCase()).filter(Boolean)
+  ).size;
+  if (uniqueVerticals > 2) baseScore += 10;
+
+  return Math.round(clamp(baseScore, 0, 100));
 }
 
 function computeBrandFitScore(bf: any): number {
@@ -134,6 +150,24 @@ function hasSocialSignal(s: SocialRow | undefined): boolean {
   if (ig + tt + xf + yt > 0) return true;
   if (er != null && Number.isFinite(Number(er)) && Number(er) > 0) return true;
   return false;
+}
+
+function weightedReachFollowers(s: SocialRow): number {
+  const ig = Number(s.ig_followers ?? 0);
+  const tt = Number(s.tt_followers ?? 0);
+  const yt = Number((s as any).yt_subscribers ?? 0);
+  const xf = Number((s as any).x_followers ?? 0);
+  return ig * 0.4 + tt * 0.3 + yt * 0.2 + xf * 0.1;
+}
+
+function computeBrandSafetyScore(meta: {
+  controversyFlag?: boolean | null;
+  injuryStatusPublic?: string | null;
+}): number {
+  let score = 100;
+  if (meta.controversyFlag === true) score -= 20;
+  if ((meta.injuryStatusPublic ?? "").toLowerCase() === "injured") score -= 10;
+  return clamp(score, 40, 100);
 }
 
 function computeMomentumScore(s: SocialRow | undefined, rating100: number): number {
@@ -242,11 +276,7 @@ function socialScoreFromData(
   poolLogFollowers: number[],
   poolEngagement: number[]
 ): number {
-  const ig = Number(s.ig_followers ?? 0);
-  const tt = Number(s.tt_followers ?? 0);
-  const xf = Number((s as any).x_followers ?? 0);
-  const yt = Number((s as any).yt_subscribers ?? 0);
-  const total = ig + tt + xf + yt;
+  const total = weightedReachFollowers(s);
   const logF = Math.log10(1 + total);
   const folPct = percentileStrictBelow(poolLogFollowers, logF);
 
@@ -349,12 +379,30 @@ async function main(): Promise<void> {
   console.log("[calc:cmv] Loading athletes + clubs…");
   const athletesById = new Map<
     string,
-    { ageYears: number | null; league: string | null }
+    {
+      ageYears: number | null;
+      league: string | null;
+      controversyFlag: boolean | null;
+      injuryStatusPublic: string | null;
+    }
   >();
   {
-    const { data, error } = await supabase
-      .from("athletes")
-      .select("id, date_of_birth, clubs ( league )");
+    let data: any[] | null = null;
+    let error: any = null;
+    {
+      const res = await supabase
+        .from("athletes")
+        .select("id, date_of_birth, controversy_flag, injury_status_public, clubs ( league )");
+      data = (res.data as any[] | null) ?? null;
+      error = res.error;
+      if (error) {
+        const fallback = await supabase
+          .from("athletes")
+          .select("id, date_of_birth, clubs ( league )");
+        data = (fallback.data as any[] | null) ?? null;
+        error = fallback.error;
+      }
+    }
     if (error) {
       console.error("[calc:cmv] athletes join clubs:", error.message);
     } else {
@@ -363,7 +411,12 @@ async function main(): Promise<void> {
       })[]) {
         const ageYears = computeAgeFromDob(row.date_of_birth as any, now);
         const league = row.clubs?.league ?? null;
-        athletesById.set(row.id, { ageYears, league });
+        athletesById.set(row.id, {
+          ageYears,
+          league,
+          controversyFlag: (row as any).controversy_flag ?? null,
+          injuryStatusPublic: (row as any).injury_status_public ?? null,
+        });
       }
     }
   }
@@ -418,11 +471,7 @@ async function main(): Promise<void> {
   const poolLogFollowers: number[] = [];
   const poolEngagement: number[] = [];
   for (const s of latestSocial.values()) {
-    const ig = Number(s.ig_followers ?? 0);
-    const tt = Number(s.tt_followers ?? 0);
-    const xf = Number((s as any).x_followers ?? 0);
-    const yt = Number((s as any).yt_subscribers ?? 0);
-    poolLogFollowers.push(Math.log10(1 + ig + tt + xf + yt));
+    poolLogFollowers.push(Math.log10(1 + weightedReachFollowers(s as SocialRow)));
     const er = s.engagement_rate;
     if (er != null && Number.isFinite(Number(er))) poolEngagement.push(Number(er));
   }
@@ -467,7 +516,12 @@ async function main(): Promise<void> {
       )
     );
 
-    const athleteMeta = athletesById.get(athleteId) ?? { ageYears: null, league: null };
+    const athleteMeta = athletesById.get(athleteId) ?? {
+      ageYears: null,
+      league: null,
+      controversyFlag: null,
+      injuryStatusPublic: null,
+    };
     const ageMult = ageMultiplier(athleteMeta.ageYears);
     const leagueMult = leagueMultiplier(athleteMeta.league);
     const sports_score = round2(
@@ -486,21 +540,21 @@ async function main(): Promise<void> {
     const brand_fit_score = computeBrandFitScore(brandFitMap.get(athleteId));
     const momentum_score = computeMomentumScore(socRow, rating100);
     const adjustment_score = computeAdjustmentScore(socRow);
+    const brand_safety_score = round2(computeBrandSafetyScore(athleteMeta));
 
     const cmv_total = round2(
       clamp(
         sports_score * W_CMV_SPORTS +
           social_score * W_CMV_SOCIAL +
           commercial_score * W_CMV_COMMERCIAL +
-          brand_fit_score * W_CMV_BRAND +
           momentum_score * W_CMV_MOMENTUM +
-          adjustment_score * W_CMV_ADJUSTMENT,
+          brand_safety_score * W_CMV_BRAND_SAFETY,
         0,
         100
       )
     );
 
-    rowsToInsert.push({
+    const scoreOutput = {
       athlete_id: athleteId,
       date: today,
       sports_score,
@@ -509,8 +563,30 @@ async function main(): Promise<void> {
       brand_fit_score,
       momentum_score,
       adjustment_score,
+      brand_safety_score,
       cmv_total,
+      cmv_version: "v4.0",
+      score_breakdown: {
+        social: social_score,
+        sports: sports_score,
+        commercial: commercial_score,
+        momentum: momentum_score,
+        brand_safety: brand_safety_score,
+      },
       score_version: SCORE_VERSION,
+    };
+
+    rowsToInsert.push({
+      athlete_id: scoreOutput.athlete_id,
+      date: scoreOutput.date,
+      sports_score: scoreOutput.sports_score,
+      social_score: scoreOutput.social_score,
+      commercial_score: scoreOutput.commercial_score,
+      brand_fit_score: scoreOutput.brand_fit_score,
+      momentum_score: scoreOutput.momentum_score,
+      adjustment_score: scoreOutput.adjustment_score,
+      cmv_total: scoreOutput.cmv_total,
+      score_version: scoreOutput.score_version,
     });
 
     processed++;
