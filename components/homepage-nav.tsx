@@ -75,6 +75,12 @@ export function HomepageNav() {
           >
             Clubs
           </Link>
+          <Link
+            href="/pricing"
+            className="text-sm text-foreground-secondary hover:text-foreground transition-colors"
+          >
+            Pricing
+          </Link>
         </div>
 
         {/* CTA */}

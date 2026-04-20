@@ -35,13 +35,7 @@ export async function GET(request: Request) {
     .eq("id", user.id)
     .maybeSingle();
 
-  const orgId = (userRow as UserRow | null)?.organization_id ?? null;
-  if (!orgId) {
-    return NextResponse.json(
-      { error: "User has no organization_id. Cannot create subscription." },
-      { status: 400 }
-    );
-  }
+  const orgId = (userRow as UserRow | null)?.organization_id ?? user.id;
 
   const stripe = getStripeServerClient();
   const { data: existingSubscription } = await supabase
