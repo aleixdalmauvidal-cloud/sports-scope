@@ -83,6 +83,14 @@ function round2(n: number): number {
   return Math.round(n * 100) / 100;
 }
 
+/** `isoDate` is `YYYY-MM-DD` (UTC calendar). Returns same format `days` earlier. */
+function dateMinusCalendarDays(isoDate: string, days: number): string {
+  const [y, m, d] = isoDate.split("-").map(Number);
+  const dt = new Date(Date.UTC(y, m - 1, d));
+  dt.setUTCDate(dt.getUTCDate() - days);
+  return dt.toISOString().slice(0, 10);
+}
+
 /** Latest row per athlete_id by `date` (ISO string compare). */
 function latestByAthleteId<T extends { athlete_id: string; date?: string | null }>(rows: T[]): Map<string, T> {
   const m = new Map<string, T>();
@@ -625,6 +633,100 @@ async function main(): Promise<void> {
     inserted += batch.length;
     if (inserted % 500 === 0 || inserted === rowsToInsert.length) {
       console.log(`[calc:cmv] Upserted ${inserted}/${rowsToInsert.length}`);
+    }
+  }
+
+  const historyStart = dateMinusCalendarDays(today, 31);
+  const date7 = dateMinusCalendarDays(today, 7);
+  const date30 = dateMinusCalendarDays(today, 30);
+  const todayTotals = new Map(rowsToInsert.map((r) => [r.athlete_id, r.cmv_total ?? 0]));
+
+  const athleteDateToTotal = new Map<string, Map<string, number>>();
+  const FETCH_IN_CHUNK = 200;
+  console.log("[calc:cmv] Loading cmv_scores for cmv_history (last 31 days)…");
+  for (let off = 0; off < targets.length; off += FETCH_IN_CHUNK) {
+    const idChunk = targets.slice(off, off + FETCH_IN_CHUNK);
+    const { data: scoreRows, error: histFetchErr } = await supabase
+      .from("cmv_scores")
+      .select("athlete_id,date,cmv_total")
+      .in("athlete_id", idChunk)
+      .gte("date", historyStart)
+      .lte("date", today)
+      .order("date", { ascending: true });
+    if (histFetchErr) {
+      console.error(`[calc:cmv] cmv_scores history fetch: ${histFetchErr.message}`);
+      process.exit(1);
+    }
+    for (const row of (scoreRows ?? []) as {
+      athlete_id: string;
+      date: string;
+      cmv_total: number | null;
+    }[]) {
+      const aid = row.athlete_id;
+      if (!aid) continue;
+      const inner = athleteDateToTotal.get(aid) ?? new Map<string, number>();
+      if (row.cmv_total != null && Number.isFinite(Number(row.cmv_total))) {
+        inner.set(row.date, Number(row.cmv_total));
+      }
+      athleteDateToTotal.set(aid, inner);
+    }
+  }
+
+  const historyRows: {
+    athlete_id: string;
+    date: string;
+    cmv_total: number;
+    delta_7d: number | null;
+    delta_30d: number | null;
+  }[] = [];
+
+  for (const athleteId of targets) {
+    const dateMap = athleteDateToTotal.get(athleteId) ?? new Map<string, number>();
+    const cmvToday =
+      dateMap.get(today) ??
+      (todayTotals.has(athleteId) ? Number(todayTotals.get(athleteId)) : NaN);
+    if (!Number.isFinite(cmvToday)) continue;
+
+    const v7 = dateMap.has(date7) ? dateMap.get(date7)! : null;
+    const v30 = dateMap.has(date30) ? dateMap.get(date30)! : null;
+    const delta_7d = v7 != null ? round2(cmvToday - v7) : null;
+    const delta_30d = v30 != null ? round2(cmvToday - v30) : null;
+
+    historyRows.push({
+      athlete_id: athleteId,
+      date: today,
+      cmv_total: round2(cmvToday),
+      delta_7d,
+      delta_30d,
+    });
+  }
+
+  console.log(`[calc:cmv] Upserting ${historyRows.length} cmv_history rows in batches of ${BATCH_SIZE}…`);
+  let histUpserted = 0;
+  for (let i = 0; i < historyRows.length; i += BATCH_SIZE) {
+    const batch = historyRows.slice(i, i + BATCH_SIZE);
+    const hist = () => (supabase as any).from("cmv_history");
+    let histErr = (await hist().upsert(batch, { onConflict: "athlete_id,date" })).error;
+    if (
+      histErr &&
+      typeof histErr.message === "string" &&
+      histErr.message.includes("no unique or exclusion constraint matching the ON CONFLICT")
+    ) {
+      const ids = batch.map((r: { athlete_id: string }) => r.athlete_id);
+      const { error: delErr } = await hist().delete().eq("date", today).in("athlete_id", ids);
+      if (delErr) {
+        console.error(`[calc:cmv] cmv_history delete fallback at offset ${i}: ${delErr.message}`);
+        process.exit(1);
+      }
+      histErr = (await hist().insert(batch)).error;
+    }
+    if (histErr) {
+      console.error(`[calc:cmv] cmv_history batch failed at offset ${i}: ${histErr.message}`);
+      process.exit(1);
+    }
+    histUpserted += batch.length;
+    if (histUpserted % 500 === 0 || histUpserted === historyRows.length) {
+      console.log(`[calc:cmv] cmv_history upserted ${histUpserted}/${historyRows.length}`);
     }
   }
 
