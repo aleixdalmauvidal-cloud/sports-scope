@@ -9,7 +9,13 @@ export const metadata: Metadata = {
 
 export default function SignupPage() {
   return (
-    <Suspense fallback={<div className="min-h-screen bg-[#0D1110]" />}>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#08090E]">
+          <div className="pointer-events-none fixed inset-0 bg-[radial-gradient(ellipse_at_top,rgba(0,229,160,0.08)_0%,transparent_55%)]" />
+        </div>
+      }
+    >
       <SignupForm />
     </Suspense>
   );

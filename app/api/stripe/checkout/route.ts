@@ -71,13 +71,12 @@ export async function GET(request: Request) {
       customerId = customer.id;
     }
 
-    const baseUrl = getBaseUrl();
     const checkout = await stripe.checkout.sessions.create({
       mode: "subscription",
       customer: customerId,
       line_items: [{ price: priceId, quantity: 1 }],
-      success_url: `${baseUrl}/pricing?checkout=success`,
-      cancel_url: `${baseUrl}/pricing?checkout=cancelled`,
+      success_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://sports-scope.vercel.app"}/pricing?upgraded=true`,
+      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL || "https://sports-scope.vercel.app"}/pricing`,
       subscription_data: {
         metadata: {
           organization_id: orgId,
