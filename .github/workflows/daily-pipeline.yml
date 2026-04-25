@@ -25,6 +25,8 @@ jobs:
           echo "dom=$(date +%d)" >> $GITHUB_OUTPUT
       - name: Install dependencies
         run: npm ci
+      - name: Run unit tests
+        run: npm run test
       - name: Sync football stats (daily)
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
