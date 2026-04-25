@@ -1,5 +1,5 @@
 /**
- * Sync API-Football season stats into Supabase `sports_metrics` for the top 100 CMV athletes.
+ * Sync API-Football season stats into Supabase `sports_metrics` for active athletes with API-Football IDs.
  *
  * Env: API_FOOTBALL_KEY, API_FOOTBALL_URL (optional),
  *      NEXT_PUBLIC_SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY (required — bypasses RLS; never expose client-side)
@@ -55,7 +55,6 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const { getTopPlayersByCmvWithClient } = await import("../lib/players");
   const {
     searchPlayer,
     getPlayerStatsForClub,
@@ -68,23 +67,42 @@ async function main(): Promise<void> {
   requiredEnv("API_FOOTBALL_KEY");
 
   const supabase = createClient<Database>(url, serviceRoleKey);
-  const players = await getTopPlayersByCmvWithClient(supabase, 100);
 
-  if (players.length === 0) {
-    console.error(
-      "[sync:football] No players returned from getTopPlayersByCmvWithClient (100). Check Supabase URL, service role key, and latest_cmv_scores data."
-    );
-    process.exit(1);
+  const { data: athleteRows, error: athleteErr } = await supabase
+    .from("athletes")
+    .select("id, name, position, api_football_player_id, clubs(league)")
+    .eq("is_active", true)
+    .not("api_football_player_id", "is", null)
+    .limit(200);
+
+  if (athleteErr) throw new Error(`Failed to fetch athletes: ${athleteErr.message}`);
+
+  const athletes = (athleteRows ?? []).map((r) => ({
+    id: r.id,
+    name: r.name,
+    position: r.position,
+    api_football_player_id: r.api_football_player_id,
+    league: (r.clubs as { league: string | null } | null)?.league ?? null,
+  }));
+
+  console.log(`[sync:football] Found ${athletes.length} active athletes with API Football IDs`);
+
+  if (athletes.length === 0) {
+    console.log("[sync:football] No active athletes found. Exiting.");
+    process.exit(0);
   }
 
   const metricsDate = new Date().toISOString().split("T")[0]!;
   let ok = 0;
   let fail = 0;
 
-  for (let i = 0; i < players.length; i++) {
-    const p = players[i]!;
-    const tag = `[${i + 1}/${players.length}] ${p.name}`;
-    const searchName = PLAYER_NAME_ALIASES[p.name] ?? p.name;
+  /** Club name not loaded from DB here; search helpers still work with league + empty club. */
+  const clubLabel = "";
+
+  for (let i = 0; i < athletes.length; i++) {
+    const a = athletes[i]!;
+    const tag = `[${i + 1}/${athletes.length}] ${a.name}`;
+    const searchName = PLAYER_NAME_ALIASES[a.name] ?? a.name;
 
     try {
       if (i > 0) {
@@ -94,13 +112,7 @@ async function main(): Promise<void> {
       let parsed: ParsedPlayerSeasonStats | null = null;
       let triedStoredApiId = false;
 
-      const { data: athApi } = await supabase
-        .from("athletes")
-        .select("api_football_player_id")
-        .eq("id", p.id)
-        .maybeSingle();
-
-      const storedApiId = athApi?.api_football_player_id;
+      const storedApiId = a.api_football_player_id;
       if (storedApiId != null && Number.isFinite(Number(storedApiId))) {
         triedStoredApiId = true;
         await sleep(DELAY_SEARCH_TO_STATS_MS);
@@ -114,7 +126,7 @@ async function main(): Promise<void> {
         if (triedStoredApiId) {
           await sleep(DELAY_SEARCH_TO_STATS_MS);
         }
-        const leagueCandidates = leagueIdsForPlayerSearch((p as any).league, (p as any).club);
+        const leagueCandidates = leagueIdsForPlayerSearch(a.league, clubLabel);
         let hits: SearchPlayerHit[] = [];
         for (let li = 0; li < leagueCandidates.length; li++) {
           if (li > 0) {
@@ -132,10 +144,10 @@ async function main(): Promise<void> {
         }
 
         let bestHit = hits[0]!;
-        let bestScore = scoreSearchPlayerHit(bestHit, (p as any).club, (p as any).league);
+        let bestScore = scoreSearchPlayerHit(bestHit, clubLabel, a.league);
         for (let j = 1; j < hits.length; j++) {
           const h = hits[j]!;
-          const s = scoreSearchPlayerHit(h, (p as any).club, (p as any).league);
+          const s = scoreSearchPlayerHit(h, clubLabel, a.league);
           if (s > bestScore) {
             bestScore = s;
             bestHit = h;
@@ -143,12 +155,7 @@ async function main(): Promise<void> {
         }
 
         await sleep(DELAY_SEARCH_TO_STATS_MS);
-        parsed = await getPlayerStatsForClub(
-          bestHit.playerId,
-          (p as any).club,
-          (p as any).league,
-          SEASON
-        );
+        parsed = await getPlayerStatsForClub(bestHit.playerId, clubLabel, a.league, SEASON);
       }
 
       if (!parsed) {
@@ -158,7 +165,7 @@ async function main(): Promise<void> {
       }
 
       const row = {
-        athlete_id: p.id,
+        athlete_id: a.id,
         date: metricsDate,
         season: SEASON,
         minutes_played: parsed.minutesPlayed,
@@ -185,9 +192,9 @@ async function main(): Promise<void> {
         api_football_player_id: parsed.apiFootballPlayerId,
       };
       if (photoUrl) athleteUpdate.photo_url = photoUrl;
-      const { error: athleteErr } = await supabase.from("athletes").update(athleteUpdate).eq("id", p.id);
-      if (athleteErr) {
-        console.warn(`${tag} WARN: sports_metrics OK but athlete update failed: ${athleteErr.message}`);
+      const { error: athleteUpdateErr } = await supabase.from("athletes").update(athleteUpdate).eq("id", a.id);
+      if (athleteUpdateErr) {
+        console.warn(`${tag} WARN: sports_metrics OK but athlete update failed: ${athleteUpdateErr.message}`);
       }
 
       console.log(
