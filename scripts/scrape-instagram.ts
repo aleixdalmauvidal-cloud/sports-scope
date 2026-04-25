@@ -76,7 +76,12 @@ async function runApifyActor(usernames: string[]) {
   return await itemsRes.json()
 }
 
-async function getFollowersMonthAgo(athleteId: string): Promise<number | null> {
+async function getFollowersMonthAgoByAthlete(
+  athleteIds: string[]
+): Promise<Map<string, { ig_followers: number | null }[]>> {
+  const grouped = new Map<string, { ig_followers: number | null }[]>()
+  if (athleteIds.length === 0) return grouped
+
   const today = new Date()
   const from = new Date(today)
   from.setDate(from.getDate() - 35)
@@ -85,22 +90,32 @@ async function getFollowersMonthAgo(athleteId: string): Promise<number | null> {
 
   const { data } = await supabase
     .from('social_metrics')
-    .select('ig_followers')
-    .eq('athlete_id', athleteId)
+    .select('athlete_id, ig_followers, date')
+    .in('athlete_id', athleteIds)
     .gte('date', from.toISOString().split('T')[0])
     .lte('date', to.toISOString().split('T')[0])
     .not('ig_followers', 'is', null)
     .order('date', { ascending: false })
-    .limit(1)
-    .single()
+  
+  for (const row of data ?? []) {
+    const athleteId = row.athlete_id
+    if (!athleteId) continue
+    const current = grouped.get(athleteId)
+    if (current) {
+      current.push({ ig_followers: row.ig_followers })
+    } else {
+      grouped.set(athleteId, [{ ig_followers: row.ig_followers }])
+    }
+  }
 
-  return data?.ig_followers ?? null
+  return grouped
 }
 
 async function saveToSupabase(
   athleteId: string,
   posts: any[],
   followers: number | null,
+  previousFollowers: number | null,
 ) {
   const today = new Date().toISOString().split('T')[0]
   const captions = posts
@@ -132,7 +147,6 @@ async function saveToSupabase(
     ? parseFloat((posts.length / 30).toFixed(4))
     : null
 
-  const previousFollowers = await getFollowersMonthAgo(athleteId)
   const followerGrowth30d =
     (previousFollowers != null && followers != null)
       ? followers - previousFollowers
@@ -176,6 +190,8 @@ async function main() {
   }
 
   console.log(`📋 ${athletes.length} atletas con Instagram handle`)
+  const allAthleteIds = athletes.map(a => a.id)
+  const historicalFollowersByAthlete = await getFollowersMonthAgoByAthlete(allAthleteIds)
 
   const batchSize = 10
   for (let i = 0; i < athletes.length; i += batchSize) {
@@ -231,7 +247,14 @@ async function main() {
       const grouped = postsByOwner.get(key)
       if (!grouped) continue
 
-      await saveToSupabase(athlete.id, grouped.posts, grouped.followersCount)
+      const previousFollowers =
+        historicalFollowersByAthlete.get(athlete.id)?.[0]?.ig_followers ?? null
+      await saveToSupabase(
+        athlete.id,
+        grouped.posts,
+        grouped.followersCount,
+        previousFollowers
+      )
     }
   }
 

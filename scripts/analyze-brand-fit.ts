@@ -23,6 +23,11 @@ type SocialMetrics = {
 type CampaignSignalsRow = Database["public"]["Tables"]["campaign_signals"]["Row"];
 type CampaignSignalsInsert = Database["public"]["Tables"]["campaign_signals"]["Insert"];
 type BrandFitInsert = Database["public"]["Tables"]["brand_fit"]["Insert"];
+type CampaignSignalsLookup = {
+  athlete_id: string;
+  news_headlines: CampaignSignalsRow["news_headlines"];
+  wikipedia_sponsors: CampaignSignalsRow["wikipedia_sponsors"];
+};
 
 function requiredEnv(name: string): string {
   const v = process.env[name]?.trim();
@@ -261,6 +266,30 @@ async function main(): Promise<void> {
     });
   }
 
+  console.log("[analyze:brands] Loading latest campaign_signals for those athletes…");
+  const { data: signalsData, error: signalsErr } = await supabase
+    .from("campaign_signals")
+    .select("athlete_id, news_headlines, wikipedia_sponsors, date")
+    .in("athlete_id", athleteIds)
+    .order("date", { ascending: false });
+
+  if (signalsErr) {
+    console.error("[analyze:brands] campaign_signals:", signalsErr.message);
+    process.exit(1);
+  }
+
+  const latestSignalsByAthlete = new Map<string, CampaignSignalsLookup>();
+  for (const row of (signalsData ?? []) as Record<string, unknown>[]) {
+    const athlete_id = String(row.athlete_id ?? "");
+    if (!athlete_id || latestSignalsByAthlete.has(athlete_id)) continue;
+    latestSignalsByAthlete.set(athlete_id, {
+      athlete_id,
+      news_headlines: (row.news_headlines as CampaignSignalsRow["news_headlines"]) ?? [],
+      wikipedia_sponsors:
+        (row.wikipedia_sponsors as CampaignSignalsRow["wikipedia_sponsors"]) ?? [],
+    });
+  }
+
   let ok = 0;
   let fail = 0;
 
@@ -279,19 +308,7 @@ async function main(): Promise<void> {
     const igFollowers = social?.ig_followers ?? null;
     const engagementRate = social?.engagement_rate ?? null;
     const captions = normalizeStringArray(social?.latest_post_captions ?? []).slice(0, 5);
-
-    const { data: existingSignals } = await supabase
-      .from("campaign_signals")
-      .select("news_headlines, wikipedia_sponsors")
-      .eq("athlete_id", athlete.id)
-      .order("date", { ascending: false })
-      .limit(1)
-      .single();
-
-    const latestSignals = existingSignals as Pick<
-      CampaignSignalsRow,
-      "news_headlines" | "wikipedia_sponsors"
-    > | null;
+    const latestSignals = latestSignalsByAthlete.get(athlete.id) ?? null;
     const newsHeadlines = normalizeStringArray(latestSignals?.news_headlines ?? []).slice(0, 8);
     const wikipediaSponsors = normalizeStringArray(latestSignals?.wikipedia_sponsors ?? []).slice(0, 10);
 
