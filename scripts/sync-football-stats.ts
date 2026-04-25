@@ -10,6 +10,7 @@
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import type { ParsedPlayerSeasonStats, SearchPlayerHit } from "../lib/api-football";
+import type { Database } from "../types/database";
 import { requiredEnv } from "./lib/env";
 
 dotenv.config({ path: ".env.local" });
@@ -54,7 +55,7 @@ function sleep(ms: number): Promise<void> {
 }
 
 async function main(): Promise<void> {
-  const { getTopPlayersByCmv } = await import("../lib/players");
+  const { getTopPlayersByCmvWithClient } = await import("../lib/players");
   const {
     searchPlayer,
     getPlayerStatsForClub,
@@ -66,11 +67,13 @@ async function main(): Promise<void> {
   const url = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
   requiredEnv("API_FOOTBALL_KEY");
 
-  const supabase = createClient(url, serviceRoleKey);
-  const players = await getTopPlayersByCmv(100);
+  const supabase = createClient<Database>(url, serviceRoleKey);
+  const players = await getTopPlayersByCmvWithClient(supabase, 100);
 
   if (players.length === 0) {
-    console.error("[sync:football] No players returned from getTopPlayersByCmv(100). Check Supabase env.");
+    console.error(
+      "[sync:football] No players returned from getTopPlayersByCmvWithClient (100). Check Supabase URL, service role key, and latest_cmv_scores data."
+    );
     process.exit(1);
   }
 

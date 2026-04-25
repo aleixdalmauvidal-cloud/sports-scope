@@ -1,4 +1,5 @@
 import { cache } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   leagueMatchesFilter,
   positionMatchesFilter,
@@ -8,6 +9,7 @@ import {
 import { getSupabase } from "@/lib/supabase";
 import { computeOpportunityScore } from "@/lib/v0-player";
 import type {
+  Database,
   CmvScoreWithAthleteClub,
   PlayerDirectoryRow,
   PlayerProfile,
@@ -270,12 +272,12 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
 
 /**
  * Ranking por CMV usando la **fila más reciente** de cada jugador (`date` DESC), luego orden por `cmv_total`.
- * Así los subscores COM/BRD/MOM/ADJ coinciden con el último snapshot y no con filas antiguas en el top.
+ * Usar en scripts con `createClient(url, SUPABASE_SERVICE_ROLE_KEY)` cuando no exista `NEXT_PUBLIC_SUPABASE_ANON_KEY`.
  */
-export async function getTopPlayersByCmv(limit = 100): Promise<PlayerRow[]> {
-  const supabase = getSupabase();
-  if (!supabase) return [];
-
+export async function getTopPlayersByCmvWithClient(
+  supabase: SupabaseClient<Database>,
+  limit = 100
+): Promise<PlayerRow[]> {
   const { data, error } = await supabase
     .from("latest_cmv_scores" as any)
     .select(cmvSelectWithJoins)
@@ -284,12 +286,22 @@ export async function getTopPlayersByCmv(limit = 100): Promise<PlayerRow[]> {
     .limit(limit);
 
   if (error) {
-    console.error("getTopPlayersByCmv:", error.message);
+    console.error("getTopPlayersByCmvWithClient:", error.message);
     return [];
   }
 
   const rows = (data ?? []) as unknown as CmvScoreWithAthleteClub[];
   return rows.map(mapCmvJoinToPlayer);
+}
+
+/**
+ * Ranking por CMV (cliente anon vía `getSupabase()`). En CI sin anon key, devuelve [].
+ * Para pipelines con solo service role, usar `getTopPlayersByCmvWithClient`.
+ */
+export async function getTopPlayersByCmv(limit = 100): Promise<PlayerRow[]> {
+  const supabase = getSupabase();
+  if (!supabase) return [];
+  return getTopPlayersByCmvWithClient(supabase, limit);
 }
 
 /** Posición en ranking según el orden de `getTopPlayersByCmv` (máx. `limit` jugadores). */
