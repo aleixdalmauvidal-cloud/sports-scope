@@ -22,7 +22,6 @@ import { CommercialSection } from "@/components/commercial-section"
 import { SocialSection } from "@/components/social-section"
 import { SportsSection } from "@/components/sports-section"
 import { AnimatedNumber } from "@/components/animated-number"
-import { ProGate } from "@/components/ProGate"
 import { cn } from "@/lib/utils"
 
 const positionColors: Record<string, string> = {
@@ -230,26 +229,21 @@ export default function PlayerProfilePage({ params }: { params: Promise<{ id: st
                 </div>
               </div>
 
-              <ProGate
-                feature="opportunity-score"
-                description="Unlock the full Opportunity Score to evaluate campaign timing, market momentum, and conversion potential for this athlete."
-              >
-                <div className="rounded-xl border border-border-default bg-surface-1 px-5 py-4">
-                  <div className="text-[10px] font-mono uppercase tracking-widest text-foreground-tertiary">
-                    Opportunity Score
-                  </div>
-                  <div className="mt-1 flex items-baseline gap-2">
-                    <AnimatedNumber
-                      value={player.oppScore}
-                      className="font-mono text-4xl font-bold text-foreground leading-none tracking-[-1px]"
-                    />
-                    <span className="text-xs text-foreground-tertiary">/ 100</span>
-                  </div>
-                  <div className="mt-2 font-mono text-[10px] text-foreground-tertiary uppercase tracking-wider">
-                    Commercial potential
-                  </div>
+              <div className="rounded-xl border border-border-default bg-surface-1 px-5 py-4">
+                <div className="text-[10px] font-mono uppercase tracking-widest text-foreground-tertiary">
+                  Opportunity Score
                 </div>
-              </ProGate>
+                <div className="mt-1 flex items-baseline gap-2">
+                  <AnimatedNumber
+                    value={player.oppScore}
+                    className="font-mono text-4xl font-bold text-foreground leading-none tracking-[-1px]"
+                  />
+                  <span className="text-xs text-foreground-tertiary">/ 100</span>
+                </div>
+                <div className="mt-2 font-mono text-[10px] text-foreground-tertiary uppercase tracking-wider">
+                  Commercial potential
+                </div>
+              </div>
             </div>
           </div>
         </motion.div>
@@ -301,12 +295,7 @@ export default function PlayerProfilePage({ params }: { params: Promise<{ id: st
         </section>
 
         {/* ============ COMMERCIAL INTELLIGENCE ============ */}
-        <ProGate
-          feature="brand-match-score"
-          description="See Brand Match Score, Vertical Fit insights, and advanced brand intelligence aligned to your campaign goals."
-        >
-          <CommercialSection profile={profile} />
-        </ProGate>
+        <CommercialSection profile={profile} />
 
         {/* ============ SOCIAL MEDIA DEEP DIVE ============ */}
         <SocialSection profile={profile} />
@@ -335,15 +324,10 @@ export default function PlayerProfilePage({ params }: { params: Promise<{ id: st
               <Scale className="w-3.5 h-3.5" />
               Compare
             </Link>
-            <ProGate
-              feature="export-button"
-              description="Export reports and shortlists in PDF/CSV for clients and internal team workflows."
-            >
-              <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
-                <Download className="w-3.5 h-3.5" />
-                Export
-              </button>
-            </ProGate>
+            <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
+              <Download className="w-3.5 h-3.5" />
+              Export
+            </button>
             <button className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-border-default text-secondary text-sm hover:bg-surface-2 transition-colors">
               <Bell className="w-3.5 h-3.5" />
               Alert
