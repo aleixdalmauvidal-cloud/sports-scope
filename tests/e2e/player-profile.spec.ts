@@ -9,7 +9,7 @@ test.describe("Players directory → profile", () => {
     const firstPlayerLink = page.locator('a[href^="/player/"]').first();
     await expect(firstPlayerLink).toBeVisible();
     await firstPlayerLink.click();
-
+    await page.waitForURL(/\/player\//, { timeout: 10_000 });
     await expect(page).toHaveURL(/\/player\/[^/]+$/);
     await expect(page.getByText("Commercial Market Value", { exact: false })).toBeVisible();
     await expect(page.getByText("CMV Breakdown", { exact: false })).toBeVisible();

@@ -10,15 +10,17 @@ test.describe("Rankings", () => {
     const count = await playerLinks.count();
     expect(count).toBeGreaterThanOrEqual(10);
 
-    const firstRow = playerLinks.first();
+    const firstRow = page.getByRole("link", { name: /Lamine Yamal/i }).first();
+    await expect(firstRow).toBeVisible();
     const cmvText = await firstRow.locator("span.font-mono.text-lg.font-semibold").textContent();
     const cmv = Number((cmvText ?? "").trim());
     expect(Number.isFinite(cmv)).toBe(true);
     expect(cmv).toBeGreaterThanOrEqual(0);
     expect(cmv).toBeLessThanOrEqual(100);
 
-    await playerLinks.first().click();
-    await expect(page).toHaveURL(/\/player\/[^/]+$/);
+    await firstRow.click();
+    await page.waitForURL(/\/player\//, { timeout: 10_000 });
+    await expect(page).toHaveURL(/\/player\//);
     await expect(page.getByText("Commercial Market Value", { exact: false })).toBeVisible();
   });
 });

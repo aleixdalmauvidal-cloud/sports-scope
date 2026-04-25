@@ -35,15 +35,17 @@ function generateFullPlayerList(): Player[] {
   // Add actual players first
   mockPlayers.forEach((p) => players.push(p))
 
-  // Generate more players to reach 964
+  // Generate more players to reach 964 (deterministic from index — no Math.random)
   for (let i = 16; i <= 964; i++) {
-    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)]
-    const lastName = baseNames[Math.floor(Math.random() * baseNames.length)]
-    const club = clubs[Math.floor(Math.random() * clubs.length)]
-    const nationality = nationalities[Math.floor(Math.random() * nationalities.length)]
-    const position = positions[Math.floor(Math.random() * positions.length)]
-    const cmv = Math.max(10, Math.floor(42 - (i - 16) * 0.035 + Math.random() * 8 - 4))
+    const firstName = firstNames[i % firstNames.length]
+    const lastName = baseNames[(i * 3) % baseNames.length]
+    const club = clubs[(i * 5) % clubs.length]
+    const nationality = nationalities[(i * 11) % nationalities.length]
+    const position = positions[(i * 13) % positions.length]
+    const cmvJitter = (i * 17) % 8
+    const cmv = Math.max(10, Math.floor(42 - (i - 16) * 0.035 + cmvJitter - 4))
     const tier = cmv >= 55 ? "elite" : cmv >= 45 ? "premium" : cmv >= 35 ? "mid" : "emerging"
+    const trends: Player["trend"][] = ["up", "down", "flat"]
 
     players.push({
       id: `gen-${i}`,
@@ -54,15 +56,15 @@ function generateFullPlayerList(): Player[] {
       club,
       league: leagueMap[club] || "LaLiga",
       position,
-      age: 18 + Math.floor(Math.random() * 18),
+      age: 18 + (i % 18),
       cmvScore: cmv,
-      sportsScore: Math.floor(Math.random() * 30) + 50,
-      socialScore: Math.floor(Math.random() * 40) + 20,
-      oppScore: Math.floor(Math.random() * 20) + 35,
-      delta7d: parseFloat((Math.random() * 6 - 3).toFixed(1)),
+      sportsScore: 50 + (i % 30),
+      socialScore: 20 + ((i * 7) % 40),
+      oppScore: 35 + ((i * 11) % 20),
+      delta7d: parseFloat((((i * 13) % 60) / 10 - 3).toFixed(1)),
       tier: tier as Player["tier"],
-      trendData: Array.from({ length: 6 }, () => cmv + Math.floor(Math.random() * 6 - 3)),
-      trend: Math.random() > 0.5 ? "up" : Math.random() > 0.5 ? "down" : "flat",
+      trendData: Array.from({ length: 6 }, (_, j) => cmv + ((i + j * 3) % 7) - 3),
+      trend: trends[i % 3],
     })
   }
 

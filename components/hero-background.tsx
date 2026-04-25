@@ -23,14 +23,14 @@ export function HeroBackground() {
     const gridSpacing = 40
     const dotSize = 1
 
-    // Floating nodes with lime green
-    const nodes = Array.from({ length: 8 }, () => ({
-      x: Math.random() * canvas.width,
-      y: Math.random() * canvas.height,
-      size: 3 + Math.random() * 5,
-      phase: Math.random() * Math.PI * 2,
-      speed: 0.2 + Math.random() * 0.3,
-      color: Math.random() > 0.5 ? "lime" : "cyan",
+    // Floating nodes (deterministic layout for SSR / hydration consistency)
+    const nodes = Array.from({ length: 8 }, (_, idx) => ({
+      x: ((idx * 0.11 + 0.07) % 0.86 + 0.07) * canvas.width,
+      y: ((idx * 0.19 + 0.05) % 0.9 + 0.05) * canvas.height,
+      size: 3 + (idx % 5) * 0.9,
+      phase: (idx * Math.PI) / 4,
+      speed: 0.2 + (idx % 4) * 0.075,
+      color: idx % 2 === 0 ? "lime" : "cyan",
     }))
 
     // Curved paths between some nodes
