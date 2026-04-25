@@ -67,29 +67,16 @@ async function saveToSupabase(athleteId: string, headlines: string[]) {
   if (!headlines.length) return;
   const today = isoToday();
 
-  const { data: existing } = await supabase
+  await supabase
     .from("campaign_signals")
-    .select("id, news_headlines")
-    .eq("athlete_id", athleteId)
-    .eq("date", today)
-    .single();
-
-  if (existing) {
-    const merged = Array.from(new Set([
-      ...((existing.news_headlines as string[]) ?? []),
-      ...headlines,
-    ])).slice(0, 20);
-
-    await supabase
-      .from("campaign_signals")
-      .update({ news_headlines: merged })
-      .eq("athlete_id", athleteId)
-      .eq("date", today);
-  } else {
-    await supabase
-      .from("campaign_signals")
-      .insert({ athlete_id: athleteId, date: today, news_headlines: headlines });
-  }
+    .upsert(
+      {
+        athlete_id: athleteId,
+        date: today,
+        news_headlines: headlines.slice(0, 20),
+      },
+      { onConflict: "athlete_id,date" }
+    );
 
   console.log(`✅ News guardado — ${athleteId} — ${headlines.length} headlines`);
 }

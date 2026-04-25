@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, useMemo } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { AppShell } from "@/components/app-shell"
 import { mockPlayers, getPlayerPhoto, type Player } from "@/lib/mock-data"
@@ -38,30 +38,20 @@ const itemVariants = {
 // Player colors for chart
 const playerColors = ["#00E5A0", "#3B82F6", "#F59E0B", "#EF4444"]
 
-// Get player subscores for radar chart
-function getPlayerRadarData(player: Player) {
-  return {
-    Sports: player.sportsScore,
-    Social: player.socialScore,
-    Commercial: 15 + Math.floor(Math.random() * 10),
-    "Brand Fit": 20 + Math.floor(Math.random() * 10),
-    Momentum: 25 + Math.floor(Math.random() * 10),
-    Adjustments: 70 + Math.floor(Math.random() * 15),
-  }
-}
-
-// Generate 12-month trend data
-function generateTrendData(players: (Player | null)[]) {
+// Generate deterministic 12-month trend data
+function generateTrendData(players: Player[]) {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
   return months.map((month, i) => {
     const data: Record<string, string | number> = { month }
     players.forEach((player, idx) => {
-      if (player) {
-        // Interpolate from trend data
-        const baseValue = player.cmvScore - 10 + Math.floor(Math.random() * 5)
-        const progress = i / 11
-        data[player.name] = Math.round(baseValue + (player.cmvScore - baseValue) * progress + (Math.random() - 0.5) * 3)
-      }
+      const trendPoints = player.trendData?.length ? player.trendData : [player.cmvScore]
+      const sourceIndex = Math.floor((i / 11) * (trendPoints.length - 1))
+      const nextIndex = Math.min(trendPoints.length - 1, sourceIndex + 1)
+      const localProgress =
+        trendPoints.length > 1 ? (i / 11) * (trendPoints.length - 1) - sourceIndex : 0
+      const start = trendPoints[sourceIndex] ?? player.cmvScore
+      const end = trendPoints[nextIndex] ?? player.cmvScore
+      data[player.name] = Math.round(start + (end - start) * localProgress + idx * 0.1)
     })
     return data
   })
@@ -78,6 +68,17 @@ const comparisonMetrics = [
   { key: "oppScore", label: "OPPORTUNITY" },
   { key: "delta7d", label: "7D CHANGE" },
 ]
+
+type MetricValueSet = {
+  cmvScore: number
+  sportsScore: number
+  socialScore: number
+  commercial: number
+  brandFit: number
+  momentum: number
+  oppScore: number
+  delta7d: number
+}
 
 interface PlayerSlotProps {
   player: Player | null
@@ -230,38 +231,65 @@ export default function ComparePage() {
 
   const activePlayers = selectedPlayers.filter((p): p is Player => p !== null)
   const selectedIds = activePlayers.map((p) => p.id)
+  const playerMetricMap = useMemo(() => {
+    return new Map(
+      activePlayers.map((player) => [
+        player.id,
+        {
+          cmvScore: player.cmvScore,
+          sportsScore: player.sportsScore,
+          socialScore: player.socialScore,
+          commercial: player.oppScore,
+          brandFit: Math.round((player.sportsScore + player.socialScore) / 2),
+          momentum: Math.max(0, Math.min(100, Math.round(50 + player.delta7d * 8))),
+          oppScore: player.oppScore,
+          delta7d: player.delta7d,
+        } as MetricValueSet,
+      ])
+    )
+  }, [activePlayers])
 
-  // Build radar data
-  const radarDimensions = ["Sports", "Social", "Commercial", "Brand Fit", "Momentum", "Adjustments"]
-  const radarData = radarDimensions.map((dim) => {
-    const entry: Record<string, string | number> = { dimension: dim }
-    activePlayers.forEach((player) => {
-      const scores = getPlayerRadarData(player)
-      entry[player.name] = scores[dim as keyof typeof scores]
+  const comparisonRows = useMemo(() => {
+    return comparisonMetrics.map((metric) => {
+      const values = activePlayers.map((p) => ({
+        id: p.id,
+        value: playerMetricMap.get(p.id)?.[metric.key as keyof MetricValueSet] ?? 0,
+      }))
+      const maxValue = values.length > 0 ? Math.max(...values.map((v) => v.value)) : null
+      const winners = maxValue == null ? [] : values.filter((v) => v.value === maxValue)
+      return {
+        metric,
+        values: Object.fromEntries(values.map((v) => [v.id, v.value])) as Record<string, number>,
+        winnerId: winners.length === 1 ? winners[0].id : null,
+        isTie: winners.length > 1,
+      }
     })
-    return entry
-  })
+  }, [activePlayers, playerMetricMap])
 
-  // Build trend data
-  const trendData = generateTrendData(activePlayers)
+  const radarData = useMemo(() => {
+    const radarDimensions = ["Sports", "Social", "Commercial", "Brand Fit", "Momentum", "Adjustments"]
+    return radarDimensions.map((dim) => {
+      const entry: Record<string, string | number> = { dimension: dim }
+      activePlayers.forEach((player) => {
+        const m = playerMetricMap.get(player.id)
+        entry[player.name] =
+          dim === "Sports"
+            ? m?.sportsScore ?? 0
+            : dim === "Social"
+              ? m?.socialScore ?? 0
+              : dim === "Commercial"
+                ? m?.commercial ?? 0
+                : dim === "Brand Fit"
+                  ? m?.brandFit ?? 0
+                  : dim === "Momentum"
+                    ? m?.momentum ?? 0
+                    : m?.cmvScore ?? 0
+      })
+      return entry
+    })
+  }, [activePlayers, playerMetricMap])
 
-  // Get metric value
-  function getMetricValue(player: Player, key: string): number {
-    if (key === "commercial") return 15 + Math.floor(Math.random() * 10)
-    if (key === "brandFit") return 20 + Math.floor(Math.random() * 10)
-    if (key === "momentum") return 25 + Math.floor(Math.random() * 10)
-    return player[key as keyof Player] as number
-  }
-
-  // Determine winner
-  function getWinner(key: string): { winnerId: string | null; isTie: boolean } {
-    if (activePlayers.length < 2) return { winnerId: null, isTie: false }
-    const values = activePlayers.map((p) => ({ id: p.id, value: getMetricValue(p, key) }))
-    const maxValue = Math.max(...values.map((v) => v.value))
-    const winners = values.filter((v) => v.value === maxValue)
-    if (winners.length > 1) return { winnerId: null, isTie: true }
-    return { winnerId: winners[0].id, isTie: false }
-  }
+  const trendData = useMemo(() => generateTrendData(activePlayers), [activePlayers])
 
   return (
     <AppShell breadcrumb="Compare" showLiveBadge={false}>
@@ -335,15 +363,14 @@ export default function ComparePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {comparisonMetrics.map((metric) => {
-                    const { winnerId, isTie } = getWinner(metric.key)
+                  {comparisonRows.map(({ metric, values, winnerId, isTie }) => {
                     return (
                       <tr key={metric.key} className="border-b border-border-default last:border-0">
                         <td className="sticky left-0 bg-background-surface px-4 py-3">
                           <span className="font-mono text-xs uppercase text-foreground-tertiary">{metric.label}</span>
                         </td>
                         {activePlayers.map((player, idx) => {
-                          const value = getMetricValue(player, metric.key)
+                          const value = values[player.id] ?? 0
                           const isWinner = winnerId === player.id
                           return (
                             <td

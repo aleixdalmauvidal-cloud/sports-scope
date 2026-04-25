@@ -121,44 +121,18 @@ async function saveToSupabase(athleteId: string, sponsors: string[]) {
   if (!sponsors.length) return;
   const today = isoToday();
 
-  const { data: existing } = await supabase
+  await supabase
     .from("campaign_signals")
-    .select("id, wikipedia_sponsors, brands_detected")
-    .eq("athlete_id", athleteId)
-    .eq("date", today)
-    .single();
-
-  if (existing) {
-    const mergedWiki = Array.from(new Set([
-      ...((existing.wikipedia_sponsors as string[]) ?? []),
-      ...sponsors,
-    ]));
-
-    const mergedBrands = Array.from(new Set([
-      ...((existing.brands_detected as string[]) ?? []),
-      ...sponsors,
-    ])).slice(0, 15);
-
-    await supabase
-      .from("campaign_signals")
-      .update({
-        wikipedia_sponsors: mergedWiki,
-        brands_detected: mergedBrands,
-        data_sources: ["instagram", "wikipedia"],
-      })
-      .eq("athlete_id", athleteId)
-      .eq("date", today);
-  } else {
-    await supabase
-      .from("campaign_signals")
-      .insert({
+    .upsert(
+      {
         athlete_id: athleteId,
         date: today,
         wikipedia_sponsors: sponsors,
-        brands_detected: sponsors,
+        brands_detected: sponsors.slice(0, 15),
         data_sources: ["wikipedia"],
-      });
-  }
+      },
+      { onConflict: "athlete_id,date" }
+    );
 
   console.log(`✅ Wikipedia guardado — ${athleteId} — ${sponsors.length} sponsors`);
 }
