@@ -10,6 +10,7 @@
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import type { ParsedPlayerSeasonStats, SearchPlayerHit } from "../lib/api-football";
+import { requiredEnv } from "./lib/env";
 
 dotenv.config({ path: ".env.local" });
 
@@ -18,18 +19,7 @@ console.log("ENV CHECK:", {
   hasUrl: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
 });
 
-function readRequiredServiceRoleKey(): string {
-  const k = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!k) {
-    console.error(
-      "[sync:football] SUPABASE_SERVICE_ROLE_KEY is not set. Add it to .env.local for this script only — it bypasses RLS and must never be committed or used in the browser."
-    );
-    process.exit(1);
-  }
-  return k;
-}
-
-const serviceRoleKey = readRequiredServiceRoleKey();
+const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
 const SEASON = 2025;
 /** Free tier ~10 req/min; spacing between athletes keeps 2 calls/player safe. */
@@ -73,16 +63,8 @@ async function main(): Promise<void> {
     leagueIdsForPlayerSearch,
   } = await import("../lib/api-football");
 
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-
-  if (!process.env.API_FOOTBALL_KEY?.trim()) {
-    console.error("[sync:football] Missing API_FOOTBALL_KEY");
-    process.exit(1);
-  }
-  if (!url) {
-    console.error("[sync:football] Missing NEXT_PUBLIC_SUPABASE_URL");
-    process.exit(1);
-  }
+  const url = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
+  requiredEnv("API_FOOTBALL_KEY");
 
   const supabase = createClient(url, serviceRoleKey);
   const players = await getTopPlayersByCmv(100);

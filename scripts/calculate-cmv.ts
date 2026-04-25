@@ -11,6 +11,7 @@
 import dotenv from "dotenv";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "../types/database";
+import { requiredEnv } from "./lib/env";
 
 dotenv.config({ path: ".env.local" });
 
@@ -69,15 +70,6 @@ function computeCommercialScore(cs: any): number {
   if (uniqueVerticals > 2) baseScore += 10;
 
   return Math.round(clamp(baseScore, 0, 100));
-}
-
-function readRequiredServiceRoleKey(): string {
-  const k = process.env.SUPABASE_SERVICE_ROLE_KEY?.trim();
-  if (!k) {
-    console.error("[calc:cmv] SUPABASE_SERVICE_ROLE_KEY is not set in .env.local");
-    process.exit(1);
-  }
-  return k;
 }
 
 function clamp(n: number, lo: number, hi: number): number {
@@ -273,13 +265,10 @@ async function fetchAllRows<T>(
 }
 
 async function main(): Promise<void> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
-  if (!url) {
-    console.error("[calc:cmv] Missing NEXT_PUBLIC_SUPABASE_URL");
-    process.exit(1);
-  }
+  const url = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
+  const serviceRoleKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-  const supabase = createClient<Database>(url, readRequiredServiceRoleKey());
+  const supabase = createClient<Database>(url, serviceRoleKey);
   const now = new Date();
   const today = now.toISOString().split("T")[0]!;
   const force = process.argv.includes("--force");

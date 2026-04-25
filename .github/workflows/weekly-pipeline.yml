@@ -5,9 +5,14 @@ on:
     - cron: '0 7 * * 1'
   workflow_dispatch:
 
+concurrency:
+  group: weekly-pipeline
+  cancel-in-progress: false
+
 jobs:
   weekly:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -2,10 +2,15 @@ import { config } from 'dotenv'
 config({ path: '.env.local' })
 
 import { createClient } from '@supabase/supabase-js'
+import { requiredEnv } from './lib/env'
+
+const supabaseUrl = requiredEnv('NEXT_PUBLIC_SUPABASE_URL')
+const serviceRoleKey = requiredEnv('SUPABASE_SERVICE_ROLE_KEY')
+const apifyApiToken = requiredEnv('APIFY_API_TOKEN')
 
 const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.SUPABASE_SERVICE_ROLE_KEY!
+  supabaseUrl,
+  serviceRoleKey
 )
 
 const ACTOR_ID = 'shu8hvrXbJbY3Eb9W'
@@ -13,7 +18,7 @@ const ACTOR_ID = 'shu8hvrXbJbY3Eb9W'
 function getHeaders() {
   return {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${process.env.APIFY_API_TOKEN}`
+    'Authorization': `Bearer ${apifyApiToken}`
   }
 }
 
