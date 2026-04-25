@@ -4,7 +4,7 @@ import { getBaseUrl, getStripeServerClient } from "@/lib/stripe/server";
 
 export const runtime = "nodejs";
 
-export async function GET() {
+export async function POST() {
   const supabase = await createServerSupabaseClient();
   const {
     data: { user },
@@ -14,7 +14,7 @@ export async function GET() {
   if (authErr || !user) {
     const loginUrl = new URL("/login", getBaseUrl());
     loginUrl.searchParams.set("next", "/pricing");
-    return NextResponse.redirect(loginUrl);
+    return NextResponse.json({ redirect: loginUrl.toString() }, { status: 401 });
   }
 
   const { data: userRow } = await supabase
@@ -47,5 +47,5 @@ export async function GET() {
     return_url: `${getBaseUrl()}/pricing`,
   });
 
-  return NextResponse.redirect(portal.url);
+  return NextResponse.json({ url: portal.url });
 }

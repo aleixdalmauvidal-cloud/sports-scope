@@ -1,5 +1,7 @@
 import Link from "next/link";
 
+import { CheckoutProButton } from "./checkout-pro-button";
+
 const freeFeatures = [
   "CMV Rankings (global, liga, posición)",
   "Player profiles con CMV Score",
@@ -121,12 +123,7 @@ export default function PricingPage() {
                 </li>
               ))}
             </ul>
-            <Link
-              href="/api/stripe/checkout?plan=pro"
-              className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-[#00E5A0] px-4 py-2.5 text-sm font-semibold text-black transition hover:brightness-95"
-            >
-              Start 14-day Free Trial
-            </Link>
+            <CheckoutProButton className="mt-7 inline-flex w-full items-center justify-center rounded-lg bg-[#00E5A0] px-4 py-2.5 text-sm font-semibold text-black transition hover:brightness-95 disabled:opacity-60" />
             <p className="mt-2 text-center text-xs text-[#9CA3AF]">
               No credit card required for trial
             </p>

@@ -16,15 +16,23 @@ function maskSecret(value: string | undefined) {
   return `${value.slice(0, 4)}***${value.slice(-4)}`;
 }
 
-export async function GET(request: Request) {
+export async function POST(request: Request) {
   try {
     console.log("[stripe/checkout] env check", {
       STRIPE_SECRET_KEY: maskSecret(process.env.STRIPE_SECRET_KEY),
       STRIPE_PRO_PRICE_ID: maskSecret(process.env.STRIPE_PRO_PRICE_ID),
     });
 
-    const url = new URL(request.url);
-    const plan = url.searchParams.get("plan") ?? "pro";
+    let plan = "pro";
+    const contentType = request.headers.get("content-type");
+    if (contentType?.includes("application/json")) {
+      try {
+        const body = (await request.json()) as { plan?: unknown };
+        if (typeof body?.plan === "string") plan = body.plan;
+      } catch {
+        /* empty or invalid JSON — default plan */
+      }
+    }
     if (plan !== "pro") {
       return NextResponse.json({ error: "Unsupported plan" }, { status: 400 });
     }
@@ -38,7 +46,7 @@ export async function GET(request: Request) {
     if (authErr || !user) {
       const loginUrl = new URL("/login", getBaseUrl());
       loginUrl.searchParams.set("next", "/pricing");
-      return NextResponse.redirect(loginUrl);
+      return NextResponse.json({ redirect: loginUrl.toString() }, { status: 401 });
     }
 
     const { data: userRow } = await supabase
@@ -95,7 +103,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: "Stripe checkout URL not returned" }, { status: 500 });
     }
 
-    return NextResponse.redirect(checkout.url);
+    return NextResponse.json({ url: checkout.url });
   } catch (error: any) {
     console.error("[stripe/checkout] full error:", error);
     console.error("[stripe/checkout] error stack:", error?.stack);
