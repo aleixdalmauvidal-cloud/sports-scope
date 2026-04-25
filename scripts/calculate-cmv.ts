@@ -88,21 +88,6 @@ function dateMinusCalendarDays(isoDate: string, days: number): string {
   return dt.toISOString().slice(0, 10);
 }
 
-/** Latest row per athlete_id by `date` (ISO string compare). */
-function latestByAthleteId<T extends { athlete_id: string | null; date?: string | null }>(
-  rows: T[]
-): Map<string, T> {
-  const m = new Map<string, T>();
-  for (const r of rows) {
-    if (!r.athlete_id) continue;
-    const cur = m.get(r.athlete_id);
-    const d = r.date ?? "";
-    const curD = cur?.date ?? "";
-    if (!cur || d > curD) m.set(r.athlete_id, r);
-  }
-  return m;
-}
-
 /** Percentage of pool strictly below this value (0–100). */
 function percentileStrictBelow(pool: number[], value: number): number {
   const vals = pool.filter((x) => Number.isFinite(x));
@@ -246,16 +231,18 @@ function brandSafetyMultiplier(s: SocialRow | undefined): number {
 
 async function fetchAllRows<T>(
   supabase: ReturnType<typeof createClient<Database>>,
-  table: "sports_metrics" | "social_metrics" | "cmv_scores",
+  table: string,
   select: string
 ): Promise<T[]> {
   const out: T[] = [];
   for (let from = 0; ; from += PAGE_SIZE) {
-    const { data, error } = await supabase
-      .from(table)
+    const query = supabase
+      .from(table as any)
       .select(select)
-      .order("date", { ascending: false })
       .range(from, from + PAGE_SIZE - 1);
+    const { data, error } = select === "*"
+      ? await query.order("date", { ascending: false })
+      : await query;
     if (error) throw new Error(`${table}: ${error.message}`);
     const chunk = (data ?? []) as T[];
     out.push(...chunk);
@@ -273,13 +260,29 @@ async function main(): Promise<void> {
   const today = now.toISOString().split("T")[0]!;
   const force = process.argv.includes("--force");
 
-  console.log("[calc:cmv] Loading sports_metrics…");
-  const allSports = await fetchAllRows<SportsRow>(supabase, "sports_metrics", "*");
-  const latestSports = latestByAthleteId(allSports);
+  console.log("[calc:cmv] Loading latest_sports_metrics…");
+  const latestSportsRows = await fetchAllRows<SportsRow>(
+    supabase,
+    "latest_sports_metrics",
+    "*"
+  );
+  const latestSports = new Map(
+    latestSportsRows
+      .filter((r) => typeof r.athlete_id === "string" && r.athlete_id.length > 0)
+      .map((r) => [r.athlete_id as string, r])
+  );
 
-  console.log("[calc:cmv] Loading social_metrics…");
-  const allSocial = await fetchAllRows<SocialRow>(supabase, "social_metrics", "*");
-  const latestSocial = latestByAthleteId(allSocial);
+  console.log("[calc:cmv] Loading latest_social_metrics…");
+  const latestSocialRows = await fetchAllRows<SocialRow>(
+    supabase,
+    "latest_social_metrics",
+    "*"
+  );
+  const latestSocial = new Map(
+    latestSocialRows
+      .filter((r) => typeof r.athlete_id === "string" && r.athlete_id.length > 0)
+      .map((r) => [r.athlete_id as string, r])
+  );
 
   /** Pools for social follower growth avg */
   const growthVals: number[] = [];

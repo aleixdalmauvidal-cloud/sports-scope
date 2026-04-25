@@ -128,27 +128,21 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
       .eq("id", id)
       .maybeSingle(),
     supabase
-      .from("cmv_scores")
+      .from("latest_cmv_scores" as any)
       .select(
         "sports_score, social_score, commercial_score, brand_fit_score, momentum_score, adjustment_score, cmv_total"
       )
       .eq("athlete_id", id)
-      .order("date", { ascending: false })
-      .limit(1)
       .maybeSingle(),
     supabase
-      .from("sports_metrics")
+      .from("latest_sports_metrics" as any)
       .select("*")
       .eq("athlete_id", id)
-      .order("date", { ascending: false })
-      .limit(1)
       .maybeSingle(),
     supabase
-      .from("social_metrics")
+      .from("latest_social_metrics" as any)
       .select("*")
       .eq("athlete_id", id)
-      .order("date", { ascending: false })
-      .limit(1)
       .maybeSingle(),
     supabase
       .from("campaign_signals" as any)
@@ -172,13 +166,13 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
     console.error("getPlayerProfile (athletes):", athRes.error.message);
   }
   if (cmvRes.error) {
-    console.error("getPlayerProfile (cmv_scores):", cmvRes.error.message);
+    console.error("getPlayerProfile (latest_cmv_scores):", cmvRes.error.message);
   }
   if (sportRes.error) {
-    console.error("getPlayerProfile (sports_metrics):", sportRes.error.message);
+    console.error("getPlayerProfile (latest_sports_metrics):", sportRes.error.message);
   }
   if (socialRes.error) {
-    console.error("getPlayerProfile (social_metrics):", socialRes.error.message);
+    console.error("getPlayerProfile (latest_social_metrics):", socialRes.error.message);
   }
   if (csRes.error) {
     console.error("getPlayerProfile (campaign_signals):", csRes.error.message);
@@ -278,36 +272,24 @@ export async function getPlayerProfile(id: string): Promise<PlayerProfile | null
  * Ranking por CMV usando la **fila más reciente** de cada jugador (`date` DESC), luego orden por `cmv_total`.
  * Así los subscores COM/BRD/MOM/ADJ coinciden con el último snapshot y no con filas antiguas en el top.
  */
-const CMV_RANKING_FETCH_CAP = 3000;
-
 export async function getTopPlayersByCmv(limit = 100): Promise<PlayerRow[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
   const { data, error } = await supabase
-    .from("cmv_scores")
+    .from("latest_cmv_scores" as any)
     .select(cmvSelectWithJoins)
     .eq("athletes.is_active", true)
-    .order("date", { ascending: false })
-    .limit(CMV_RANKING_FETCH_CAP);
+    .order("cmv_total", { ascending: false })
+    .limit(limit);
 
   if (error) {
     console.error("getTopPlayersByCmv:", error.message);
     return [];
   }
 
-  const rows = (data ?? []) as CmvScoreWithAthleteClub[];
-  const seen = new Set<string>();
-  const latestPerAthlete: CmvScoreWithAthleteClub[] = [];
-  for (const row of rows) {
-    const aid = row.athlete_id ?? row.athletes.id;
-    if (seen.has(aid)) continue;
-    seen.add(aid);
-    latestPerAthlete.push(row);
-  }
-
-  latestPerAthlete.sort((a, b) => scoreFromRow(b.cmv_total) - scoreFromRow(a.cmv_total));
-  return latestPerAthlete.slice(0, limit).map(mapCmvJoinToPlayer);
+  const rows = (data ?? []) as unknown as CmvScoreWithAthleteClub[];
+  return rows.map(mapCmvJoinToPlayer);
 }
 
 /** Posición en ranking según el orden de `getTopPlayersByCmv` (máx. `limit` jugadores). */
@@ -319,9 +301,6 @@ export async function getAthleteCmvRank(
   const i = list.findIndex((p) => p.id === athleteId);
   return i === -1 ? null : i + 1;
 }
-
-const CMV_FULL_SCAN_BATCH = 4000;
-const CMV_FULL_SCAN_ROW_CAP = 120_000;
 
 const ABBREV_TO_POSITION: Record<"FW" | "MF" | "DF" | "GK", PositionFilterValue> = {
   FW: "Forward",
@@ -363,46 +342,19 @@ async function loadAllLatestCmvPlayerRows(): Promise<PlayerRow[]> {
   const supabase = getSupabase();
   if (!supabase) return [];
 
-  const { count: athleteCount } = await supabase
-    .from("athletes")
-    .select("*", { count: "exact", head: true });
+  const { data, error } = await supabase
+    .from("latest_cmv_scores" as any)
+    .select(cmvSelectWithJoins)
+    .eq("athletes.is_active", true)
+    .order("cmv_total", { ascending: false });
 
-  const target = athleteCount ?? 0;
-  const seen = new Map<string, CmvScoreWithAthleteClub>();
-  let offset = 0;
-
-  while (offset < CMV_FULL_SCAN_ROW_CAP) {
-    const { data, error } = await supabase
-      .from("cmv_scores")
-      .select(cmvSelectWithJoins)
-      .eq("athletes.is_active", true)
-      .order("date", { ascending: false })
-      .range(offset, offset + CMV_FULL_SCAN_BATCH - 1);
-
-    if (error) {
-      console.error("loadAllLatestCmvPlayerRows:", error.message);
-      break;
-    }
-    if (!data?.length) break;
-
-    let added = 0;
-    for (const row of data as CmvScoreWithAthleteClub[]) {
-      const aid = row.athlete_id ?? row.athletes?.id;
-      if (!aid || !row.athletes) continue;
-      if (!seen.has(aid)) {
-        seen.set(aid, row);
-        added++;
-      }
-    }
-
-    if (data.length < CMV_FULL_SCAN_BATCH) break;
-    if (added === 0) break;
-
-    offset += data.length;
-    if (target > 0 && seen.size >= target) break;
+  if (error) {
+    console.error("loadAllLatestCmvPlayerRows:", error.message);
+    return [];
   }
 
-  return [...seen.values()].map(mapCmvJoinToPlayer);
+  const rows = (data ?? []) as unknown as CmvScoreWithAthleteClub[];
+  return rows.map(mapCmvJoinToPlayer);
 }
 
 const getCachedLatestPlayerRows = cache(async (): Promise<PlayerRow[]> => {
