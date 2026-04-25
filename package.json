@@ -22,7 +22,10 @@
     "agent:sponsors": "npx tsx scripts/agent-sponsor-discovery.ts",
     "agent:valuation": "npx tsx scripts/agent-sponsor-valuation.ts",
     "pipeline:weekly": "npx tsx scripts/weekly-pipeline.ts",
-    "setup:all": "npm run import:players && npm run sync:football && npm run calc:cmv"
+    "setup:all": "npm run import:players && npm run sync:football && npm run calc:cmv",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -81,15 +84,18 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@playwright/test": "^1.59.1",
     "@tailwindcss/postcss": "^4.2.2",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@vitejs/plugin-react": "^4.7.0",
     "dotenv": "^17.4.2",
     "postcss": "^8.5",
     "tailwindcss": "^4.2.0",
     "tsx": "^4.21.0",
     "tw-animate-css": "1.3.3",
-    "typescript": "5.7.3"
+    "typescript": "5.7.3",
+    "vitest": "^3.2.4"
   }
 }
