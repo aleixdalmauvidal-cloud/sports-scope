@@ -89,7 +89,7 @@ export function HomeRankingClient({ initialPlayers }: Props) {
             </>
           ) : null}
 
-          <WeeklyMovers players={initialPlayers} />
+          <WeeklyMovers risers={[]} fallers={[]} />
 
           <div className="mb-6">
             <RankingsFilterBar

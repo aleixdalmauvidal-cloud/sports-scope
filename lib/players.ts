@@ -54,7 +54,7 @@ function mapCmvJoinToPlayer(row: CmvScoreWithAthleteClub): PlayerRow {
     name: a.name,
     club: clubName,
     league: a.clubs?.league ?? null,
-    position: a.position,
+    position: a.position ?? "",
     sports_score: scoreFromRow(row.sports_score),
     social_score: scoreFromRow(row.social_score),
     commercial_score: scoreFromRow(row.commercial_score),
@@ -89,14 +89,14 @@ function normalizeSportsMetrics(row: Record<string, unknown> | null): SportsMetr
   return {
     athlete_id: row.athlete_id,
     date: String(row.date ?? ""),
-    season: num(row.season) ?? undefined,
-    api_football_id: num(row.api_football_id) ?? undefined,
+    season: num(row.season) ?? null,
+    api_football_id: num(row.api_football_id) ?? null,
     market_value_millions: marketMillions,
     minutes_played: num(row.minutes_played) ?? 0,
     goals: num(row.goals) ?? 0,
     assists: num(row.assists) ?? 0,
-    matches_played: num(row.matches_played) ?? undefined,
-    pass_accuracy: num(row.pass_accuracy) ?? undefined,
+    matches_played: num(row.matches_played) ?? null,
+    pass_accuracy: num(row.pass_accuracy) ?? null,
     rating: num(row.form_rating ?? row.rating),
   };
 }
@@ -104,7 +104,7 @@ function normalizeSportsMetrics(row: Record<string, unknown> | null): SportsMetr
 function normalizeSocialMetrics(row: Record<string, unknown> | null): SocialMetricsRow | null {
   if (!row || typeof row.athlete_id !== "string") return null;
   return {
-    athlete_id: row.athlete_id,
+    athlete_id: String(row.athlete_id),
     date: row.date != null ? String(row.date) : null,
     ig_followers: num(row.ig_followers ?? row.instagram_followers ?? row.instagram),
     tt_followers: num(row.tt_followers ?? row.tiktok_followers ?? row.tiktok),
@@ -431,7 +431,7 @@ function rowMatchesDirectorySearch(row: PlayerRow, search: string): boolean {
   if (!q) return true;
   return (
     row.name.toLowerCase().includes(q) ||
-    row.club.toLowerCase().includes(q) ||
+    (row.club ?? "").toLowerCase().includes(q) ||
     String(Math.round(row.cmv_total)).includes(q)
   );
 }
@@ -506,7 +506,7 @@ export async function getPlayersWithFilters(
     if (!leagueMatchesFilter(row.league, league)) return false;
     if (position !== "All") {
       const posKey = position as keyof typeof ABBREV_TO_POSITION;
-      if (!positionMatchesFilter(row.position, ABBREV_TO_POSITION[posKey])) return false;
+      if (!positionMatchesFilter(row.position ?? "", ABBREV_TO_POSITION[posKey])) return false;
     }
     if (!matchesDirectoryCmvRange(scoreFromRow(row.cmv_total), cmvRange)) return false;
     return true;

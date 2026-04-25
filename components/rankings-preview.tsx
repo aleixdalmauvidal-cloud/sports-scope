@@ -128,18 +128,18 @@ export function RankingsPreview() {
           {/* Sports */}
           <div className="flex flex-col items-center justify-center gap-1">
             <span className="font-mono text-xs text-foreground-secondary">{player.sports}</span>
-            <ScoreBar value={player.sports} color="blue" />
+            <ScoreBar value={player.sports} />
           </div>
 
           {/* Social */}
           <div className="flex flex-col items-center justify-center gap-1">
             <span className="font-mono text-xs text-foreground-secondary">{player.social}</span>
-            <ScoreBar value={player.social} color="green" />
+            <ScoreBar value={player.social} />
           </div>
 
           {/* Delta */}
           <div className="flex items-center justify-end">
-            <DeltaIndicator value={player.delta} trend={player.trend} />
+            <DeltaIndicator value={player.delta} />
           </div>
         </motion.div>
       ))}

@@ -568,7 +568,7 @@ export async function getTeamSquad(teamId: number): Promise<{
   if (!teamName) return null;
 
   const players: SquadPlayer[] = [];
-  for (const row of block.players ?? []) {
+  for (const row of block?.players ?? []) {
     const payload = squadRowToPlayerPayload(row);
     if (!payload) continue;
     const sp = payloadToSquadPlayer(payload);

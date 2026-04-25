@@ -1,0 +1,219 @@
+app/ai-search/page.tsx(32,11): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/ai-search/page.tsx(49,13): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/clubs/page.tsx(24,15): error TS2322: Type '{ children: Element; title: string; }' is not assignable to type 'IntrinsicAttributes & AppShellProps'.
+  Property 'title' does not exist on type 'IntrinsicAttributes & AppShellProps'.
+app/clubs/page.tsx(32,11): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(270,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(278,21): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(303,25): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(394,15): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(431,25): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(477,25): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+app/compare/page.tsx(496,13): error TS2322: Type '{ hidden: { opacity: number; y: number; }; visible: { opacity: number; y: number; transition: { duration: number; ease: string; }; }; }' is not assignable to type 'Variants'.
+  Property 'visible' is incompatible with index signature.
+    Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'Variant'.
+      Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type 'TargetAndTransition'.
+        Type '{ opacity: number; y: number; transition: { duration: number; ease: string; }; }' is not assignable to type '{ transition?: Transition<any> | undefined; transitionEnd?: ResolvedValues$1 | undefined; }'.
+          Types of property 'transition' are incompatible.
+            Type '{ duration: number; ease: string; }' is not assignable to type 'Transition<any> | undefined'.
+              Type '{ duration: number; ease: string; }' is not assignable to type 'TransitionWithValueOverrides<any>'.
+                Type '{ duration: number; ease: string; }' is not assignable to type 'ValueAnimationTransition<any>'.
+                  Types of property 'ease' are incompatible.
+                    Type 'string' is not assignable to type 'Easing | Easing[] | undefined'.
+components/CmvRankingTable.tsx(234,30): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/CmvRankingTable.tsx(236,28): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/CmvRankingTable.tsx(238,32): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/CmvRankingTable.tsx(245,40): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+components/CmvRankingTable.tsx(249,45): error TS2339: Property 'sports_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/CmvRankingTable.tsx(252,45): error TS2339: Property 'social_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/CmvRankingTable.tsx(256,47): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/home-ranking-client.tsx(92,25): error TS2322: Type '{ players: Player[]; }' is not assignable to type 'IntrinsicAttributes & WeeklyMoversProps'.
+  Property 'players' does not exist on type 'IntrinsicAttributes & WeeklyMoversProps'.
+components/player-profile-analysis.tsx(77,100): error TS2551: Property 'followers_growth_30d' does not exist on type '{ athlete_id: string | null; avg_comments: number | null; avg_likes: number | null; avg_saves: number | null; avg_views: number | null; created_at: string | null; date: string; engagement_rate: number | null; ... 11 more ...; yt_subscribers: number | null; }'. Did you mean 'follower_growth_30d'?
+components/PlayerProfileView.tsx(86,50): error TS2339: Property 'market_value_millions' does not exist on type '{ api_football_id: number | null; assists: number | null; athlete_id: string | null; created_at: string | null; date: string; form_rating: number | null; goals: number | null; id: string; ... 5 more ...; season: number | null; }'.
+components/PlayerProfileView.tsx(129,45): error TS2339: Property 'avg_views_per_post' does not exist on type '{ athlete_id: string | null; avg_comments: number | null; avg_likes: number | null; avg_saves: number | null; avg_views: number | null; created_at: string | null; date: string; engagement_rate: number | null; ... 11 more ...; yt_subscribers: number | null; }'.
+components/PlayerProfileView.tsx(133,54): error TS2551: Property 'followers_growth_30d' does not exist on type '{ athlete_id: string | null; avg_comments: number | null; avg_likes: number | null; avg_saves: number | null; avg_views: number | null; created_at: string | null; date: string; engagement_rate: number | null; ... 11 more ...; yt_subscribers: number | null; }'. Did you mean 'follower_growth_30d'?
+components/players-database-client.tsx(53,17): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+components/players-database-client.tsx(339,46): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+components/players-database-client.tsx(393,52): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+components/players-database-client.tsx(398,39): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+components/players-database-client.tsx(403,39): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+components/players-database-client.tsx(408,39): error TS2345: Argument of type 'number | undefined' is not assignable to parameter of type 'number'.
+  Type 'undefined' is not assignable to type 'number'.
+components/ranking/RankingDashboard.tsx(51,60): error TS2339: Property 'sports_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(52,60): error TS2339: Property 'social_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(53,60): error TS2339: Property 'commercial_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(54,60): error TS2339: Property 'brand_fit_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(55,60): error TS2339: Property 'momentum_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(56,60): error TS2339: Property 'adjustment_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(121,34): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+components/ranking/RankingDashboard.tsx(157,46): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(179,51): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(289,78): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(290,15): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(291,68): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(296,38): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(530,100): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(531,38): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(532,97): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(538,50): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+components/ranking/RankingDashboard.tsx(542,55): error TS2339: Property 'sports_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(545,55): error TS2339: Property 'social_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/ranking/RankingDashboard.tsx(552,57): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+components/rankings-preview.tsx(131,45): error TS2322: Type '{ value: number; color: string; }' is not assignable to type 'IntrinsicAttributes & ScoreBarProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ScoreBarProps'.
+components/rankings-preview.tsx(137,45): error TS2322: Type '{ value: number; color: string; }' is not assignable to type 'IntrinsicAttributes & ScoreBarProps'.
+  Property 'color' does not exist on type 'IntrinsicAttributes & ScoreBarProps'.
+components/rankings-preview.tsx(142,50): error TS2322: Type '{ value: number; trend: "up" | "down"; }' is not assignable to type 'IntrinsicAttributes & DeltaIndicatorProps'.
+  Property 'trend' does not exist on type 'IntrinsicAttributes & DeltaIndicatorProps'.
+lib/api-football.ts(571,21): error TS18048: 'block' is possibly 'undefined'.
+lib/players.ts(55,5): error TS2353: Object literal may only specify known properties, and 'club' does not exist in type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(92,5): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+lib/players.ts(93,5): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+lib/players.ts(98,5): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+lib/players.ts(99,5): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+lib/players.ts(108,5): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/players.ts(434,9): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(435,27): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(482,30): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(482,58): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(486,42): error TS2339: Property 'sports_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(487,42): error TS2339: Property 'social_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(488,46): error TS2339: Property 'commercial_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(489,44): error TS2339: Property 'brand_fit_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(490,44): error TS2339: Property 'momentum_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(491,47): error TS2339: Property 'adjustment_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(509,34): error TS2345: Argument of type 'string | null' is not assignable to parameter of type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/players.ts(531,11): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(531,41): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(532,11): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(532,37): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/players.ts(597,5): error TS2353: Object literal may only specify known properties, and 'club' does not exist in type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/stripe/server.ts(16,5): error TS2322: Type '"2025-03-31.basil"' is not assignable to type '"2026-03-25.dahlia"'.
+lib/v0-player.ts(366,30): error TS2339: Property 'cmv_total' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(367,38): error TS2339: Property 'sports_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(368,38): error TS2339: Property 'social_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(369,42): error TS2339: Property 'commercial_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(370,40): error TS2339: Property 'brand_fit_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(371,40): error TS2339: Property 'momentum_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(372,43): error TS2339: Property 'adjustment_score' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(384,15): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(385,17): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+lib/v0-player.ts(388,5): error TS2322: Type 'string | null' is not assignable to type 'string'.
+  Type 'null' is not assignable to type 'string'.
+lib/v0-player.ts(439,5): error TS2322: Type 'number | undefined' is not assignable to type 'number | null'.
+  Type 'undefined' is not assignable to type 'number | null'.
+lib/v0-player.ts(449,48): error TS2339: Property 'market_value_millions' does not exist on type '{ api_football_id: number | null; assists: number | null; athlete_id: string | null; created_at: string | null; date: string; form_rating: number | null; goals: number | null; id: string; ... 5 more ...; season: number | null; }'.
+lib/v0-player.ts(463,57): error TS2551: Property 'followers_growth_30d' does not exist on type '{ athlete_id: string | null; avg_comments: number | null; avg_likes: number | null; avg_saves: number | null; avg_views: number | null; created_at: string | null; date: string; engagement_rate: number | null; ... 11 more ...; yt_subscribers: number | null; }'. Did you mean 'follower_growth_30d'?
+scripts/sync-football-stats.ts(132,61): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(132,71): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(150,57): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(150,65): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(153,47): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(153,55): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(161,66): error TS2339: Property 'club' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.
+scripts/sync-football-stats.ts(161,74): error TS2339: Property 'league' does not exist on type '{ age: number | null; api_football_player_id: number | null; club_id: string | null; created_at: string | null; date_of_birth: string | null; id: string; instagram_handle: string | null; ... 8 more ...; yt_handle: string | null; }'.

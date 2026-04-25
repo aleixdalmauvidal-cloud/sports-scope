@@ -28,12 +28,12 @@ const containerVariants = {
     opacity: 1,
     transition: { staggerChildren: 0.05 },
   },
-}
+} as any
 
 const itemVariants = {
   hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-}
+} as any
 
 // Player colors for chart
 const playerColors = ["#00E5A0", "#3B82F6", "#F59E0B", "#EF4444"]

@@ -35,8 +35,8 @@ async function syncSubscription(sub: Stripe.Subscription) {
     stripe_subscription_id: sub.id,
     plan,
     status: sub.status,
-    current_period_start: toIso(sub.current_period_start),
-    current_period_end: toIso(sub.current_period_end),
+    current_period_start: toIso((sub as any).current_period_start),
+    current_period_end: toIso((sub as any).current_period_end),
     cancel_at_period_end: sub.cancel_at_period_end,
     updated_at: new Date().toISOString(),
   } as any;

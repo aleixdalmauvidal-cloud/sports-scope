@@ -242,7 +242,7 @@ export function CmvRankingTable({ players }: Props) {
                     </td>
                     <td className="px-3 py-5 align-middle lg:px-6 lg:py-6">
                       <span className="inline-flex rounded-lg border border-white/[0.1] bg-white/[0.04] px-2.5 py-1.5 font-mono text-sm font-semibold uppercase tracking-wide text-zinc-400">
-                        {positionBadge(p.position)}
+                        {positionBadge(p.position ?? "")}
                       </span>
                     </td>
                     <td className="border-l border-white/[0.08] px-3 py-5 text-right align-middle font-mono text-lg tabular-nums text-zinc-200 sm:text-xl lg:px-5 lg:py-6">

@@ -29,6 +29,11 @@ const W_CMV_BRAND_SAFETY = 0.05;
 type SportsRow = Database["public"]["Tables"]["sports_metrics"]["Row"];
 type SocialRow = Database["public"]["Tables"]["social_metrics"]["Row"];
 type AthleteRow = Database["public"]["Tables"]["athletes"]["Row"];
+type CampaignSignalsRow = Database["public"]["Tables"]["campaign_signals"]["Row"];
+type CmvHistoryInsert = Database["public"]["Tables"]["cmv_history"]["Insert"];
+type AthleteMetaRow = Pick<AthleteRow, "id" | "date_of_birth" | "position"> & {
+  clubs: { league: string | null } | null;
+};
 
 function computeCommercialScore(cs: any): number {
   if (!cs) return DEFAULT_COMMERCIAL;
@@ -92,9 +97,12 @@ function dateMinusCalendarDays(isoDate: string, days: number): string {
 }
 
 /** Latest row per athlete_id by `date` (ISO string compare). */
-function latestByAthleteId<T extends { athlete_id: string; date?: string | null }>(rows: T[]): Map<string, T> {
+function latestByAthleteId<T extends { athlete_id: string | null; date?: string | null }>(
+  rows: T[]
+): Map<string, T> {
   const m = new Map<string, T>();
   for (const r of rows) {
+    if (!r.athlete_id) continue;
     const cur = m.get(r.athlete_id);
     const d = r.date ?? "";
     const curD = cur?.date ?? "";
@@ -328,22 +336,20 @@ async function main(): Promise<void> {
     }
   >();
   {
-    let data: any[] | null = null;
-    let error: any = null;
+    let data: AthleteMetaRow[] | null = null;
+    let error: Error | null = null;
     {
       const res = await supabase
         .from("athletes")
         .select("id, date_of_birth, position, clubs ( league )");
-      data = (res.data as any[] | null) ?? null;
+      data = res.data ?? null;
       error = res.error;
     }
     if (error) {
       console.error("[calc:cmv] athletes join clubs:", error.message);
     } else {
-      for (const row of (data ?? []) as (AthleteRow & {
-        clubs: { league: string | null } | null;
-      })[]) {
-        const dob = (row as AthleteRow & { date_of_birth?: string | null }).date_of_birth;
+      for (const row of data ?? []) {
+        const dob = row.date_of_birth;
         const ageYears = computeAgeFromDob(dob, now);
         const league = row.clubs?.league ?? null;
         athletesById.set(row.id, {
@@ -358,6 +364,7 @@ async function main(): Promise<void> {
   /** GA90 pools by position bucket */
   const ga90ByBucket = new Map<string, number[]>();
   for (const r of latestSports.values()) {
+    if (!r.athlete_id) continue;
     const meta = athletesById.get(r.athlete_id);
     const bucket = positionBucket(meta?.position);
     const min = Number(r.minutes_played ?? 0);
@@ -370,7 +377,7 @@ async function main(): Promise<void> {
   }
 
   console.log("[calc:cmv] Loading campaign_signals (active athletes)…");
-  const campaignMap = new Map<string, any>();
+  const campaignMap = new Map<string, CampaignSignalsRow>();
   {
     const { data: activeAthletes, error: activeErr } = await supabase
       .from("athletes")
@@ -380,18 +387,18 @@ async function main(): Promise<void> {
       console.error("[calc:cmv] athletes (is_active):", activeErr.message);
     } else {
       const activeIds = (activeAthletes ?? [])
-        .map((r: any) => String(r.id ?? ""))
+        .map((r) => String(r.id ?? ""))
         .filter(Boolean);
 
       const { data: csData, error: csErr } = await supabase
-        .from("campaign_signals" as any)
+        .from("campaign_signals")
         .select("*")
         .in("athlete_id", activeIds)
         .order("date", { ascending: false });
 
       if (csErr) console.error("[calc:cmv] campaign_signals:", csErr.message);
 
-      for (const row of (csData ?? []) as any[]) {
+      for (const row of csData ?? []) {
         const aid = String(row.athlete_id ?? "");
         if (!aid) continue;
         if (!campaignMap.has(aid)) campaignMap.set(aid, row);
@@ -672,13 +679,7 @@ async function main(): Promise<void> {
     }
   }
 
-  const historyRows: {
-    athlete_id: string;
-    date: string;
-    cmv_total: number;
-    delta_7d: number | null;
-    delta_30d: number | null;
-  }[] = [];
+  const historyRows: CmvHistoryInsert[] = [];
 
   for (const athleteId of targets) {
     const dateMap = athleteDateToTotal.get(athleteId) ?? new Map<string, number>();
@@ -705,14 +706,16 @@ async function main(): Promise<void> {
   let histUpserted = 0;
   for (let i = 0; i < historyRows.length; i += BATCH_SIZE) {
     const batch = historyRows.slice(i, i + BATCH_SIZE);
-    const hist = () => (supabase as any).from("cmv_history");
+    const hist = () => supabase.from("cmv_history");
     let histErr = (await hist().upsert(batch, { onConflict: "athlete_id,date" })).error;
     if (
       histErr &&
       typeof histErr.message === "string" &&
       histErr.message.includes("no unique or exclusion constraint matching the ON CONFLICT")
     ) {
-      const ids = batch.map((r: { athlete_id: string }) => r.athlete_id);
+      const ids = batch
+        .map((r) => r.athlete_id)
+        .filter((id): id is string => typeof id === "string" && id.length > 0);
       const { error: delErr } = await hist().delete().eq("date", today).in("athlete_id", ids);
       if (delErr) {
         console.error(`[calc:cmv] cmv_history delete fallback at offset ${i}: ${delErr.message}`);

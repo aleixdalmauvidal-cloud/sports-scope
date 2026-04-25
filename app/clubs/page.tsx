@@ -12,16 +12,16 @@ const containerVariants = {
       staggerChildren: 0.05,
     },
   },
-}
+} as any
 
 const itemVariants = {
   hidden: { opacity: 0, y: 8 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.3, ease: "easeOut" } },
-}
+} as any
 
 export default function ClubsPage() {
   return (
-    <AppShell title="Clubs">
+    <AppShell>
       <motion.div
         variants={containerVariants}
         initial="hidden"

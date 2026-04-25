@@ -74,7 +74,7 @@ export function PlayerProfileAnalysis({ player, profile }: Props) {
             </div>
             <div className="rounded-lg border border-border p-3">
               <p className="text-xs text-[#7A9490]">Growth 30d</p>
-              <p className="font-display text-xl text-white">{formatFollowerGrowthAbsolute(social?.followers_growth_30d)}</p>
+              <p className="font-display text-xl text-white">{formatFollowerGrowthAbsolute((social as any)?.follower_growth_30d)}</p>
             </div>
           </div>
         </div>

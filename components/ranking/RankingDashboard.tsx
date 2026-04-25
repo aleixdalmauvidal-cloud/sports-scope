@@ -118,7 +118,7 @@ function MiniArcGauge({
 function RankingPlayerCard({ player, rank }: { player: PlayerRow; rank: number }) {
   const accent = accentForRank(rank);
   const flag = nationalityToFlagEmoji(player.nationality);
-  const posLabel = positionBadge(player.position);
+  const posLabel = positionBadge(player.position ?? "");
   /** Placeholder until weekly CMV delta exists in data */
   const trendVsWeek = 0;
   const trendPositive = trendVsWeek >= 0;
@@ -189,7 +189,7 @@ function RankingPlayerCard({ player, rank }: { player: PlayerRow; rank: number }
 
         <div className="flex flex-nowrap justify-between gap-0.5 overflow-x-auto pb-1 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {GAUGE_META.map(({ key, color, get }) => (
-            <MiniArcGauge key={key} label={key} value={get(player)} color={color} />
+            <MiniArcGauge key={key} label={key} value={get(player) ?? 0} color={color} />
           ))}
         </div>
 
@@ -535,7 +535,7 @@ export function RankingDashboard({ players, children }: Props) {
                               </td>
                               <td className="h-[52px] min-h-[52px] px-6 py-0 align-middle lg:px-8">
                                 <span className="inline-flex rounded-lg border border-white/10 bg-white/[0.04] px-2.5 py-1 font-mono text-[13px] font-semibold text-zinc-400">
-                                  {positionBadge(p.position)}
+                                  {positionBadge(p.position ?? "")}
                                 </span>
                               </td>
                               <td className="h-[52px] min-h-[52px] border-l border-white/[0.08] px-6 py-0 text-right align-middle font-mono text-[13px] tabular-nums text-zinc-200 lg:px-8">

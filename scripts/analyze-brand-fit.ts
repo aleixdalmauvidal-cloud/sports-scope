@@ -2,6 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../types/database";
 
 type Athlete = {
   id: string;
@@ -19,6 +20,9 @@ type SocialMetrics = {
   avg_likes?: number | null;
   latest_post_captions?: string[] | null;
 };
+type CampaignSignalsRow = Database["public"]["Tables"]["campaign_signals"]["Row"];
+type CampaignSignalsInsert = Database["public"]["Tables"]["campaign_signals"]["Insert"];
+type BrandFitInsert = Database["public"]["Tables"]["brand_fit"]["Insert"];
 
 function requiredEnv(name: string): string {
   const v = process.env[name]?.trim();
@@ -206,7 +210,7 @@ async function main(): Promise<void> {
   const supabaseUrl = requiredEnv("NEXT_PUBLIC_SUPABASE_URL");
   const serviceKey = requiredEnv("SUPABASE_SERVICE_ROLE_KEY");
 
-  const supabase = createClient(supabaseUrl, serviceKey);
+  const supabase = createClient<Database>(supabaseUrl, serviceKey);
   const date = todayIsoDate();
 
   console.log("[analyze:brands] Loading 30 active athletes…");
@@ -246,13 +250,13 @@ async function main(): Promise<void> {
     latestSocial.set(athlete_id, {
       athlete_id,
       date: r.date != null ? String(r.date) : null,
-      ig_followers: safeNumber((r as any).ig_followers),
-      engagement_rate: safeNumber((r as any).engagement_rate),
-      avg_views_per_post: safeNumber((r as any).avg_views_per_post),
-      avg_views: safeNumber((r as any).avg_views),
-      avg_likes: safeNumber((r as any).avg_likes),
-      latest_post_captions: Array.isArray((r as any).latest_post_captions)
-        ? (r as any).latest_post_captions
+      ig_followers: safeNumber(r.ig_followers),
+      engagement_rate: safeNumber(r.engagement_rate),
+      avg_views_per_post: safeNumber(r.avg_views_per_post),
+      avg_views: safeNumber(r.avg_views),
+      avg_likes: safeNumber(r.avg_likes),
+      latest_post_captions: Array.isArray(r.latest_post_captions)
+        ? r.latest_post_captions
         : null,
     });
   }
@@ -284,8 +288,12 @@ async function main(): Promise<void> {
       .limit(1)
       .single();
 
-    const newsHeadlines = normalizeStringArray((existingSignals as any)?.news_headlines ?? []).slice(0, 8);
-    const wikipediaSponsors = normalizeStringArray((existingSignals as any)?.wikipedia_sponsors ?? []).slice(0, 10);
+    const latestSignals = existingSignals as Pick<
+      CampaignSignalsRow,
+      "news_headlines" | "wikipedia_sponsors"
+    > | null;
+    const newsHeadlines = normalizeStringArray(latestSignals?.news_headlines ?? []).slice(0, 8);
+    const wikipediaSponsors = normalizeStringArray(latestSignals?.wikipedia_sponsors ?? []).slice(0, 10);
 
     const prompt = buildPrompt({
       name: athlete.name,
@@ -323,7 +331,7 @@ async function main(): Promise<void> {
       const campaignTypes = normalizeStringArray(estimate?.campaign_types);
       const brandSafetyScore = safeNumber(estimate?.brand_safety_score);
 
-      const campaignSignalsPayload = {
+      const campaignSignalsPayload: CampaignSignalsInsert = {
         athlete_id: athlete.id,
         date,
         branded_posts_count: safeNumber(estimate?.branded_posts_count),
@@ -338,21 +346,21 @@ async function main(): Promise<void> {
           ...(newsHeadlines.length > 0 ? ["news"] : []),
           ...(wikipediaSponsors.length > 0 ? ["wikipedia"] : []),
         ],
-      } as any;
+      };
 
       const { error: csErr } = await supabase
         .from("campaign_signals")
         .upsert(campaignSignalsPayload, { onConflict: "athlete_id,date" });
       if (csErr) throw new Error(`campaign_signals: ${csErr.message}`);
 
-      const brandFitPayload = {
+      const brandFitPayload: BrandFitInsert = {
         athlete_id: athlete.id,
         date,
         lifestyle_score: safeNumber(estimate?.lifestyle_score),
         fit_sportswear: safeNumber(estimate?.fit_sportswear),
         fit_betting: safeNumber(estimate?.fit_betting),
         brand_safety_score: brandSafetyScore,
-      } as any;
+      };
 
       const { error: bfErr } = await supabase
         .from("brand_fit")

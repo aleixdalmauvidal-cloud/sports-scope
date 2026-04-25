@@ -436,7 +436,7 @@ export function mapPlayerProfileToV0Player(profile: PlayerProfile): Player {
     adjustment_score: profile.adjustment_score,
     cmv_total: profile.cmv_total,
     nationality: profile.nationality,
-    age: profile.age ?? undefined,
+    age: profile.age ?? null,
     photo_url: profile.photo_url,
   };
   const base = mapPlayerRowToV0Player(rowLike, rank);
@@ -446,7 +446,7 @@ export function mapPlayerProfileToV0Player(profile: PlayerProfile): Player {
   return {
     ...base,
     age: profile.age ?? 0,
-    marketValue: formatMarketValueMillions(sp?.market_value_millions),
+    marketValue: formatMarketValueMillions((sp as any)?.market_value),
     nationality: profile.nationality?.trim() || base.nationality,
     flag: nationalityToFlagEmoji(profile.nationality),
     instagram: formatCompactNumber(sm?.ig_followers),
@@ -460,6 +460,6 @@ export function mapPlayerProfileToV0Player(profile: PlayerProfile): Player {
         : er != null && Number.isFinite(Number(er))
           ? "typical"
           : "—",
-    followerGrowth30d: formatFollowerGrowthAbsolute(sm?.followers_growth_30d),
+    followerGrowth30d: formatFollowerGrowthAbsolute((sm as any)?.follower_growth_30d),
   };
 }

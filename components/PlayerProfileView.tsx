@@ -83,7 +83,7 @@ export function PlayerProfileView({ profile }: Props) {
         <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <StatCard
             label="Market value"
-            value={formatMarketValueMillions(sm?.market_value_millions ?? null)}
+            value={formatMarketValueMillions((sm as any)?.market_value ?? null)}
           />
           <StatCard
             label="Minutos jugados"
@@ -126,11 +126,11 @@ export function PlayerProfileView({ profile }: Props) {
         <div className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           <StatCard
             label="Avg views / post"
-            value={formatCompactNumber(soc?.avg_views_per_post ?? (soc as any)?.avg_views ?? null)}
+            value={formatCompactNumber(soc?.avg_views ?? null)}
           />
           <StatCard
             label="Crecimiento followers 30d"
-            value={formatFollowerGrowthAbsolute(soc?.followers_growth_30d ?? null)}
+            value={formatFollowerGrowthAbsolute((soc as any)?.follower_growth_30d ?? null)}
             sub="Seguidores nuevos (30 días)"
           />
           <StatCard
@@ -143,18 +143,18 @@ export function PlayerProfileView({ profile }: Props) {
       <section className="rounded-2xl border border-white/[0.12] bg-gradient-to-b from-accent/[0.08] to-transparent p-8 sm:p-10 lg:p-12">
         <SectionTitle>CMV desglose</SectionTitle>
         <div className="mt-10 space-y-8">
-          <ScoreBar label="Sports score" value={profile.sports_score} />
-          <ScoreBar label="Social score" value={profile.social_score} />
-          <ScoreBar label="Commercial score" value={profile.commercial_score} />
-          <ScoreBar label="Brand fit score" value={profile.brand_fit_score} />
-          <ScoreBar label="Momentum score" value={profile.momentum_score} />
-          <ScoreBar label="Adjustment score" value={profile.adjustment_score} />
+          <ScoreBar label="Sports score" value={profile.sports_score ?? 0} />
+          <ScoreBar label="Social score" value={profile.social_score ?? 0} />
+          <ScoreBar label="Commercial score" value={profile.commercial_score ?? 0} />
+          <ScoreBar label="Brand fit score" value={profile.brand_fit_score ?? 0} />
+          <ScoreBar label="Momentum score" value={profile.momentum_score ?? 0} />
+          <ScoreBar label="Adjustment score" value={profile.adjustment_score ?? 0} />
           <div className="border-t border-white/[0.12] pt-12">
             <p className="text-center text-sm font-semibold uppercase tracking-[0.22em] text-accent-muted">
               CMV total
             </p>
             <p className="mt-4 text-center font-mono text-6xl font-bold tabular-nums tracking-tight text-accent sm:text-7xl [text-shadow:0_0_48px_rgba(46,228,168,0.28)]">
-              {formatScore(profile.cmv_total)}
+              {formatScore(profile.cmv_total ?? 0)}
             </p>
             <p className="mt-3 text-center text-base text-zinc-400">Índice agregado 0–100</p>
           </div>

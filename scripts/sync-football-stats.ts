@@ -129,7 +129,7 @@ async function main(): Promise<void> {
         if (triedStoredApiId) {
           await sleep(DELAY_SEARCH_TO_STATS_MS);
         }
-        const leagueCandidates = leagueIdsForPlayerSearch(p.league, p.club);
+        const leagueCandidates = leagueIdsForPlayerSearch((p as any).league, (p as any).club);
         let hits: SearchPlayerHit[] = [];
         for (let li = 0; li < leagueCandidates.length; li++) {
           if (li > 0) {
@@ -147,10 +147,10 @@ async function main(): Promise<void> {
         }
 
         let bestHit = hits[0]!;
-        let bestScore = scoreSearchPlayerHit(bestHit, p.club, p.league);
+        let bestScore = scoreSearchPlayerHit(bestHit, (p as any).club, (p as any).league);
         for (let j = 1; j < hits.length; j++) {
           const h = hits[j]!;
-          const s = scoreSearchPlayerHit(h, p.club, p.league);
+          const s = scoreSearchPlayerHit(h, (p as any).club, (p as any).league);
           if (s > bestScore) {
             bestScore = s;
             bestHit = h;
@@ -158,7 +158,12 @@ async function main(): Promise<void> {
         }
 
         await sleep(DELAY_SEARCH_TO_STATS_MS);
-        parsed = await getPlayerStatsForClub(bestHit.playerId, p.club, p.league, SEASON);
+        parsed = await getPlayerStatsForClub(
+          bestHit.playerId,
+          (p as any).club,
+          (p as any).league,
+          SEASON
+        );
       }
 
       if (!parsed) {

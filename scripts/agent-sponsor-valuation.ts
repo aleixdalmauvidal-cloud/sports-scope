@@ -2,11 +2,18 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../types/database";
 
-const supabase = createClient(
+const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+type SponsorValuationInsert = Database["public"]["Tables"]["sponsor_valuations"]["Insert"];
+type ActiveAthlete = {
+  id: string;
+  name: string;
+  clubs: { name: string | null; league: string | null } | null;
+};
 
 function isoToday(): string {
   return new Date().toISOString().split("T")[0]!;
@@ -132,24 +139,25 @@ Return ONLY valid JSON:
 
 async function saveToSupabase(athleteId: string, result: any) {
   const today = isoToday();
+  const payload: SponsorValuationInsert = {
+    athlete_id: athleteId,
+    date: today,
+    valuation_per_post_min: result?.valuation_per_post_min ?? null,
+    valuation_per_post_max: result?.valuation_per_post_max ?? null,
+    valuation_annual_min: result?.valuation_annual_min ?? null,
+    valuation_annual_max: result?.valuation_annual_max ?? null,
+    valuation_ambassador_min: result?.valuation_ambassador_min ?? null,
+    valuation_ambassador_max: result?.valuation_ambassador_max ?? null,
+    valuation_event_min: result?.valuation_event_min ?? null,
+    valuation_event_max: result?.valuation_event_max ?? null,
+    reasoning: result?.reasoning ?? null,
+    key_factors: result?.key_factors ?? null,
+    comparable_athletes: result?.comparable_athletes ?? null,
+  };
 
   const { error } = await supabase
     .from("sponsor_valuations")
-    .upsert({
-      athlete_id: athleteId,
-      date: today,
-      valuation_per_post_min: result?.valuation_per_post_min ?? null,
-      valuation_per_post_max: result?.valuation_per_post_max ?? null,
-      valuation_annual_min: result?.valuation_annual_min ?? null,
-      valuation_annual_max: result?.valuation_annual_max ?? null,
-      valuation_ambassador_min: result?.valuation_ambassador_min ?? null,
-      valuation_ambassador_max: result?.valuation_ambassador_max ?? null,
-      valuation_event_min: result?.valuation_event_min ?? null,
-      valuation_event_max: result?.valuation_event_max ?? null,
-      reasoning: result?.reasoning ?? null,
-      key_factors: result?.key_factors ?? null,
-      comparable_athletes: result?.comparable_athletes ?? null,
-    }, { onConflict: "athlete_id,date" });
+    .upsert(payload, { onConflict: "athlete_id,date" });
 
   if (error) throw new Error(`Supabase error: ${error.message}`);
 }
@@ -168,7 +176,8 @@ async function main() {
     return;
   }
 
-  const athleteIds = (athletes as any[]).map(a => a.id);
+  const typedAthletes = (athletes ?? []) as ActiveAthlete[];
+  const athleteIds = typedAthletes.map((a) => a.id);
 
   const { data: cmvData } = await supabase
     .from("cmv_scores")
@@ -176,9 +185,15 @@ async function main() {
     .in("athlete_id", athleteIds)
     .order("date", { ascending: false });
 
-  const latestCmv = new Map<string, any>();
-  for (const row of (cmvData ?? []) as any[]) {
-    if (!latestCmv.has(row.athlete_id)) latestCmv.set(row.athlete_id, row);
+  const latestCmv = new Map<
+    string,
+    Pick<
+      Database["public"]["Tables"]["cmv_scores"]["Row"],
+      "athlete_id" | "cmv_total" | "sports_score" | "social_score"
+    >
+  >();
+  for (const row of cmvData ?? []) {
+    if (!latestCmv.has(row.athlete_id ?? "")) latestCmv.set(row.athlete_id ?? "", row);
   }
 
   const { data: socialData } = await supabase
@@ -187,9 +202,15 @@ async function main() {
     .in("athlete_id", athleteIds)
     .order("date", { ascending: false });
 
-  const latestSocial = new Map<string, any>();
-  for (const row of (socialData ?? []) as any[]) {
-    if (!latestSocial.has(row.athlete_id)) latestSocial.set(row.athlete_id, row);
+  const latestSocial = new Map<
+    string,
+    Pick<
+      Database["public"]["Tables"]["social_metrics"]["Row"],
+      "athlete_id" | "ig_followers" | "tt_followers" | "engagement_rate"
+    >
+  >();
+  for (const row of socialData ?? []) {
+    if (!latestSocial.has(row.athlete_id ?? "")) latestSocial.set(row.athlete_id ?? "", row);
   }
 
   const { data: campaignData } = await supabase
@@ -198,9 +219,12 @@ async function main() {
     .in("athlete_id", athleteIds)
     .order("date", { ascending: false });
 
-  const latestCampaign = new Map<string, any>();
-  for (const row of (campaignData ?? []) as any[]) {
-    if (!latestCampaign.has(row.athlete_id)) latestCampaign.set(row.athlete_id, row);
+  const latestCampaign = new Map<
+    string,
+    Pick<Database["public"]["Tables"]["campaign_signals"]["Row"], "athlete_id" | "brands_detected">
+  >();
+  for (const row of campaignData ?? []) {
+    if (!latestCampaign.has(row.athlete_id ?? "")) latestCampaign.set(row.athlete_id ?? "", row);
   }
 
   console.log(`📋 Running Sponsor Valuation Agent for ${athletes.length} athletes`);
@@ -208,7 +232,7 @@ async function main() {
   let ok = 0;
   let fail = 0;
 
-  for (const athlete of athletes as any[]) {
+  for (const athlete of typedAthletes) {
     process.stdout.write(`[sponsor-valuation] ${athlete.name}… `);
     try {
       await new Promise(r => setTimeout(r, 15000));

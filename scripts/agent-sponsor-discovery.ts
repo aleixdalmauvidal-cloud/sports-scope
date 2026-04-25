@@ -2,11 +2,18 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { createClient } from "@supabase/supabase-js";
+import type { Database } from "../types/database";
 
-const supabase = createClient(
+const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
+type CampaignSignalsInsert = Database["public"]["Tables"]["campaign_signals"]["Insert"];
+type ActiveAthlete = {
+  id: string;
+  name: string;
+  clubs: { name: string | null; league: string | null } | null;
+};
 
 function isoToday(): string {
   return new Date().toISOString().split("T")[0]!;
@@ -104,20 +111,21 @@ async function saveToSupabase(athleteId: string, result: any) {
   const brandNames = sponsors.map((s: any) => s.brand).filter(Boolean);
   const verticals = [...new Set(sponsors.map((s: any) => s.category).filter(Boolean))] as string[];
   const confidence = result?.confidence_score ?? 50;
+  const payload: CampaignSignalsInsert = {
+    athlete_id: athleteId,
+    date: today,
+    brands_detected: brandNames,
+    brand_verticals: verticals,
+    unique_brands_count: brandNames.length,
+    discovered_sponsors: result,
+    sponsor_discovery_ran_at: new Date().toISOString(),
+    discovery_confidence: confidence / 100,
+    data_sources: ["web_search", "ai_agent"],
+  };
 
   const { error } = await supabase
     .from("campaign_signals")
-    .upsert({
-      athlete_id: athleteId,
-      date: today,
-      brands_detected: brandNames,
-      brand_verticals: verticals,
-      unique_brands_count: brandNames.length,
-      discovered_sponsors: result,
-      sponsor_discovery_ran_at: new Date().toISOString(),
-      discovery_confidence: confidence / 100,
-      data_sources: ["web_search", "ai_agent"],
-    }, { onConflict: "athlete_id,date" });
+    .upsert(payload, { onConflict: "athlete_id,date" });
 
   if (error) throw new Error(`Supabase error: ${error.message}`);
 }
@@ -138,7 +146,7 @@ async function main() {
   let ok = 0;
   let fail = 0;
 
-  for (const athlete of athletes as any[]) {
+  for (const athlete of (athletes ?? []) as ActiveAthlete[]) {
     process.stdout.write(`[sponsor-discovery] ${athlete.name}… `);
     try {
       await new Promise(r => setTimeout(r, 15000));

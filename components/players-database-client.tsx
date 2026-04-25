@@ -43,8 +43,9 @@ function initials(name: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-function scoreRound(n: number): number {
-  return Math.round(Number.isFinite(n) ? n : 0);
+function scoreRound(n: number | null | undefined): number {
+  const value = Number(n ?? 0);
+  return Math.round(Number.isFinite(value) ? value : 0);
 }
 
 function isHiddenGem(row: PlayerDirectoryRow): boolean {
@@ -390,7 +391,7 @@ export function PlayersDatabaseClient({
                       </td>
                       <td className="px-2 py-1.5 align-middle text-muted-foreground">
                         <Link href={`/player/${row.id}`} className="block">
-                          {abbreviatePositionLabel(row.position)}
+                          {abbreviatePositionLabel(row.position ?? "")}
                         </Link>
                       </td>
                       <td className="px-2 py-1.5 align-middle font-display font-semibold tabular-nums text-[#38A047]">
