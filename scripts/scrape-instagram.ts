@@ -3,6 +3,7 @@ config({ path: '.env.local' })
 
 import { createClient } from '@supabase/supabase-js'
 import { requiredEnv } from './lib/env'
+import { fetchWithRetry } from './lib/fetch-with-retry'
 
 const supabaseUrl = requiredEnv('NEXT_PUBLIC_SUPABASE_URL')
 const serviceRoleKey = requiredEnv('SUPABASE_SERVICE_ROLE_KEY')
@@ -26,7 +27,7 @@ async function runApifyActor(usernames: string[]) {
   const uniqueUsernames = [...new Set(usernames)]
   console.log(`🚀 Lanzando Apify para: ${uniqueUsernames.join(', ')}`)
 
-  const runRes = await fetch(
+  const runRes = await fetchWithRetry(
     `https://api.apify.com/v2/acts/${ACTOR_ID}/runs`,
     {
       method: 'POST',
@@ -53,7 +54,7 @@ async function runApifyActor(usernames: string[]) {
   let status = 'RUNNING'
   while (status === 'RUNNING' || status === 'READY') {
     await new Promise(r => setTimeout(r, 5000))
-    const statusRes = await fetch(
+    const statusRes = await fetchWithRetry(
       `https://api.apify.com/v2/actor-runs/${runId}`,
       { headers: getHeaders() }
     )
@@ -67,14 +68,14 @@ async function runApifyActor(usernames: string[]) {
     return null
   }
 
-  const runInfoRes = await fetch(
+  const runInfoRes = await fetchWithRetry(
     `https://api.apify.com/v2/actor-runs/${runId}`,
     { headers: getHeaders() }
   )
   const runInfo = await runInfoRes.json()
   const datasetId = runInfo.data.defaultDatasetId
 
-  const itemsRes = await fetch(
+  const itemsRes = await fetchWithRetry(
     `https://api.apify.com/v2/datasets/${datasetId}/items`,
     { headers: getHeaders() }
   )

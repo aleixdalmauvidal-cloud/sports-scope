@@ -2,6 +2,7 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 
 import { createClient } from "@supabase/supabase-js";
+import { fetchWithRetry } from "./lib/fetch-with-retry";
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -22,7 +23,7 @@ function isoToday(): string {
 }
 
 async function runApifyActor(queries: string[]) {
-  const runRes = await fetch(`https://api.apify.com/v2/acts/${ACTOR_ID}/runs`, {
+  const runRes = await fetchWithRetry(`https://api.apify.com/v2/acts/${ACTOR_ID}/runs`, {
     method: "POST",
     headers: getHeaders(),
     body: JSON.stringify({
@@ -42,7 +43,7 @@ async function runApifyActor(queries: string[]) {
   let status = "RUNNING";
   while (status === "RUNNING" || status === "READY") {
     await new Promise((r) => setTimeout(r, 5000));
-    const statusRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, {
+    const statusRes = await fetchWithRetry(`https://api.apify.com/v2/actor-runs/${runId}`, {
       headers: getHeaders(),
     });
     const statusData = await statusRes.json();
@@ -55,11 +56,11 @@ async function runApifyActor(queries: string[]) {
     return null;
   }
 
-  const runInfoRes = await fetch(`https://api.apify.com/v2/actor-runs/${runId}`, { headers: getHeaders() });
+  const runInfoRes = await fetchWithRetry(`https://api.apify.com/v2/actor-runs/${runId}`, { headers: getHeaders() });
   const runInfo = await runInfoRes.json();
   const datasetId = runInfo.data.defaultDatasetId;
 
-  const itemsRes = await fetch(`https://api.apify.com/v2/datasets/${datasetId}/items`, { headers: getHeaders() });
+  const itemsRes = await fetchWithRetry(`https://api.apify.com/v2/datasets/${datasetId}/items`, { headers: getHeaders() });
   return await itemsRes.json();
 }
 

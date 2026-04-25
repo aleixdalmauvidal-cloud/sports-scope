@@ -5,6 +5,7 @@
 
 const DEFAULT_BASE = "https://v3.football.api-sports.io";
 const RAPIDAPI_HOST = "v3.football.api-sports.io";
+import { fetchWithRetry } from "@/scripts/lib/fetch-with-retry";
 
 /** Big-five league ids (API-Football). */
 export const API_FOOTBALL_LEAGUE_IDS = {
@@ -73,7 +74,7 @@ export type ApiFootballEnvelope<T> = {
 async function apiGet<T>(path: string, query: Record<string, string | number | undefined | null>): Promise<T> {
   const url = buildUrl(path, query);
   console.log("[api-football] GET", url);
-  const res = await fetch(url, { headers: apiHeaders(), cache: "no-store" });
+  const res = await fetchWithRetry(url, { headers: apiHeaders(), cache: "no-store" });
   const text = await res.text();
   let body: unknown;
   try {
@@ -522,7 +523,7 @@ export async function getTeamSquad(teamId: number): Promise<{
 } | null> {
   const url = buildUrl("/players/squads", { team: teamId });
   console.log("[api-football] GET", url);
-  const res = await fetch(url, { headers: apiHeaders(), cache: "no-store" });
+  const res = await fetchWithRetry(url, { headers: apiHeaders(), cache: "no-store" });
   const text = await res.text();
   let body: unknown;
   try {
