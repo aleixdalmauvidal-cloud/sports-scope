@@ -4,7 +4,15 @@ function ts(): string {
   return new Date().toISOString();
 }
 
-function runStep(cmd: string[], label: string): Promise<void> {
+type StepResult = {
+  label: string;
+  ok: boolean;
+  exitCode: number | null;
+  critical: boolean;
+  error?: string;
+};
+
+function runStep(cmd: string[], label: string, critical: boolean): Promise<StepResult> {
   return new Promise((resolve) => {
     console.log(`[${ts()}] ▶️  Starting step: ${label}`);
 
@@ -16,19 +24,26 @@ function runStep(cmd: string[], label: string): Promise<void> {
     child.on("exit", (code) => {
       if (code === 0) {
         console.log(`[${ts()}] ✅ Finished step: ${label} (exit ${code})`);
+        resolve({ label, ok: true, exitCode: code, critical });
       } else {
         console.error(
           `[${ts()}] ❌ Step failed: ${label} (exit ${code}) — continuing with next step`
         );
+        resolve({ label, ok: false, exitCode: code, critical });
       }
-      resolve();
     });
 
     child.on("error", (err) => {
       console.error(
         `[${ts()}] ❌ Step error: ${label} — ${err?.message ?? String(err)}`
       );
-      resolve();
+      resolve({
+        label,
+        ok: false,
+        exitCode: null,
+        critical,
+        error: err?.message ?? String(err),
+      });
     });
   });
 }
@@ -36,18 +51,60 @@ function runStep(cmd: string[], label: string): Promise<void> {
 async function main() {
   console.log(`[${ts()}] 🚀 Daily pipeline started`);
 
-  await runStep(["npx", "tsx", "scripts/sync-football-stats.ts"], "sync-football-stats");
-  await runStep(["npx", "tsx", "scripts/scrape-instagram.ts"], "scrape-instagram");
-  await runStep(["npx", "tsx", "scripts/scrape-tiktok.ts"], "scrape-tiktok");
-  await runStep(["npx", "tsx", "scripts/scrape-x.ts"], "scrape-x");
-  await runStep(["npx", "tsx", "scripts/scrape-youtube.ts"], "scrape-youtube");
-  await runStep(["npx", "tsx", "scripts/scrape-wikipedia.ts"], "scrape-wikipedia");
-  await runStep(["npx", "tsx", "scripts/scrape-news.ts"], "scrape-news");
-  await runStep(["npx", "tsx", "scripts/analyze-brand-fit.ts"], "analyze-brand-fit");
-  await runStep(
-    ["npx", "tsx", "scripts/calculate-cmv.ts", "--force"],
-    "calculate-cmv --force"
+  const results: StepResult[] = [];
+  results.push(
+    await runStep(
+      ["npx", "tsx", "scripts/sync-football-stats.ts"],
+      "sync-football-stats",
+      true
+    )
   );
+  results.push(
+    await runStep(["npx", "tsx", "scripts/scrape-instagram.ts"], "scrape-instagram", false)
+  );
+  results.push(
+    await runStep(["npx", "tsx", "scripts/scrape-tiktok.ts"], "scrape-tiktok", false)
+  );
+  results.push(await runStep(["npx", "tsx", "scripts/scrape-x.ts"], "scrape-x", false));
+  results.push(
+    await runStep(["npx", "tsx", "scripts/scrape-youtube.ts"], "scrape-youtube", false)
+  );
+  results.push(
+    await runStep(["npx", "tsx", "scripts/scrape-wikipedia.ts"], "scrape-wikipedia", false)
+  );
+  results.push(
+    await runStep(["npx", "tsx", "scripts/scrape-news.ts"], "scrape-news", false)
+  );
+  results.push(
+    await runStep(["npx", "tsx", "scripts/analyze-brand-fit.ts"], "analyze-brand-fit", false)
+  );
+  results.push(
+    await runStep(
+      ["npx", "tsx", "scripts/calculate-cmv.ts", "--force"],
+      "calculate-cmv --force",
+      true
+    )
+  );
+
+  const criticalFailures = results.filter((step) => step.critical && !step.ok);
+  const nonCriticalFailures = results.filter((step) => !step.critical && !step.ok);
+
+  if (nonCriticalFailures.length > 0) {
+    console.warn(
+      `[${ts()}] ⚠️ Non-critical failures: ${nonCriticalFailures
+        .map((step) => step.label)
+        .join(", ")}`
+    );
+  }
+
+  if (criticalFailures.length > 0) {
+    console.error(
+      `[${ts()}] ❌ Critical failures: ${criticalFailures
+        .map((step) => step.label)
+        .join(", ")}`
+    );
+    process.exit(1);
+  }
 
   console.log(`[${ts()}] 🎉 Daily pipeline finished`);
 }

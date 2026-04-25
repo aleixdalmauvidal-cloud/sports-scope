@@ -5,6 +5,10 @@ on:
     - cron: '0 6 * * *'
   workflow_dispatch:
 
+concurrency:
+  group: daily-pipeline
+  cancel-in-progress: false
+
 jobs:
   pipeline:
     runs-on: ubuntu-latest
@@ -14,6 +18,11 @@ jobs:
         with:
           node-version: '20'
           cache: 'npm'
+      - name: Compute day outputs
+        id: day
+        run: |
+          echo "dow=$(date +%u)" >> $GITHUB_OUTPUT
+          echo "dom=$(date +%d)" >> $GITHUB_OUTPUT
       - name: Install dependencies
         run: npm ci
       - name: Sync football stats (daily)
@@ -38,7 +47,7 @@ jobs:
           APIFY_API_TOKEN: ${{ secrets.APIFY_API_TOKEN }}
         run: npm run scrape:tiktok
       - name: Scrape X and YouTube (biweekly - 1st and 15th)
-        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && contains(fromJSON('["1","15"]'), format('{0}', steps.day.outputs.dom))) }}
+        if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'schedule' && contains(fromJSON('["01","15"]'), format('{0}', steps.day.outputs.dom))) }}
         env:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}

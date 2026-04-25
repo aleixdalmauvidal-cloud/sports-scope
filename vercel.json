@@ -1,9 +1,2 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/daily-pipeline",
-      "schedule": "0 6 * * *"
-    }
-  ]
-}
+{}
 
